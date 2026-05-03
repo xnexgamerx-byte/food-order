@@ -3,20 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Food ordering platform API for Salah al-Din, Iraq
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: restaurants
+    description: Restaurant operations
+  - name: categories
+    description: Food category operations
+  - name: menu-items
+    description: Menu item operations
+  - name: orders
+    description: Order operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +31,122 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /restaurants:
+    get:
+      operationId: listRestaurants
+      tags: [restaurants]
+      summary: List all restaurants
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of restaurants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Restaurant"
+
+  /restaurants/{id}:
+    get:
+      operationId: getRestaurant
+      tags: [restaurants]
+      summary: Get a restaurant by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restaurant details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Restaurant"
+
+  /restaurants/{id}/menu:
+    get:
+      operationId: getRestaurantMenu
+      tags: [restaurants]
+      summary: Get menu items for a restaurant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Menu items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MenuItem"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all food categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderBody"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /featured:
+    get:
+      operationId: getFeatured
+      tags: [restaurants]
+      summary: Get featured restaurants and popular items
+      responses:
+        "200":
+          description: Featured content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeaturedContent"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +157,213 @@ components:
       required:
         - status
 
+    Restaurant:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nameAr:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        category:
+          type: string
+        categoryAr:
+          type: string
+        rating:
+          type: number
+        deliveryTime:
+          type: string
+        minOrder:
+          type: number
+        imageUrl:
+          type: string
+        isOpen:
+          type: boolean
+        phone:
+          type: string
+        whatsapp:
+          type: string
+        address:
+          type: string
+      required:
+        - id
+        - name
+        - nameAr
+        - category
+        - categoryAr
+        - rating
+        - deliveryTime
+        - minOrder
+        - imageUrl
+        - isOpen
+
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        restaurantId:
+          type: integer
+        name:
+          type: string
+        nameAr:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        price:
+          type: number
+        imageUrl:
+          type: string
+        category:
+          type: string
+        categoryAr:
+          type: string
+        isAvailable:
+          type: boolean
+      required:
+        - id
+        - restaurantId
+        - name
+        - nameAr
+        - price
+        - imageUrl
+        - category
+        - categoryAr
+        - isAvailable
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nameAr:
+          type: string
+        icon:
+          type: string
+        imageUrl:
+          type: string
+      required:
+        - id
+        - name
+        - nameAr
+        - icon
+
+    CreateOrderBody:
+      type: object
+      properties:
+        customerName:
+          type: string
+        customerPhone:
+          type: string
+        restaurantId:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItemInput"
+        address:
+          type: string
+        neighborhood:
+          type: string
+        notes:
+          type: string
+        total:
+          type: number
+      required:
+        - customerName
+        - customerPhone
+        - restaurantId
+        - items
+        - address
+        - total
+
+    OrderItemInput:
+      type: object
+      properties:
+        menuItemId:
+          type: integer
+        quantity:
+          type: integer
+        price:
+          type: number
+        name:
+          type: string
+        nameAr:
+          type: string
+      required:
+        - menuItemId
+        - quantity
+        - price
+        - name
+        - nameAr
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderNumber:
+          type: string
+        customerName:
+          type: string
+        customerPhone:
+          type: string
+        restaurantId:
+          type: integer
+        restaurantName:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItemInput"
+        address:
+          type: string
+        neighborhood:
+          type: string
+        notes:
+          type: string
+        total:
+          type: number
+        status:
+          type: string
+        whatsappUrl:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - orderNumber
+        - customerName
+        - customerPhone
+        - restaurantId
+        - restaurantName
+        - items
+        - address
+        - total
+        - status
+        - whatsappUrl
+        - createdAt
+
+    FeaturedContent:
+      type: object
+      properties:
+        featuredRestaurants:
+          type: array
+          items:
+            $ref: "#/components/schemas/Restaurant"
+        popularItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/MenuItem"
+      required:
+        - featuredRestaurants
+        - popularItems
