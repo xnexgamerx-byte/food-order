@@ -46,6 +46,23 @@ paths:
           in: query
           schema:
             type: string
+        - name: hasDiscount
+          in: query
+          schema:
+            type: boolean
+        - name: isFreeDelivery
+          in: query
+          schema:
+            type: boolean
+        - name: isFastDelivery
+          in: query
+          schema:
+            type: boolean
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [rating, deliveryTime]
       responses:
         "200":
           description: List of restaurants
@@ -184,6 +201,12 @@ components:
           type: string
         isOpen:
           type: boolean
+        isFreeDelivery:
+          type: boolean
+        discountPercent:
+          type: integer
+        deliveryMinutes:
+          type: integer
         phone:
           type: string
         whatsapp:

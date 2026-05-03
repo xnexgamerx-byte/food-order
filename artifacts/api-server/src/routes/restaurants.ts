@@ -1,13 +1,20 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { restaurantsTable, menuItemsTable } from "@workspace/db";
-import { eq, ilike, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 const router = Router();
 
 router.get("/restaurants", async (req, res) => {
   try {
-    const { category, search } = req.query as { category?: string; search?: string };
+    const { category, search, hasDiscount, isFreeDelivery, isFastDelivery, sortBy } = req.query as {
+      category?: string;
+      search?: string;
+      hasDiscount?: string;
+      isFreeDelivery?: string;
+      isFastDelivery?: string;
+      sortBy?: string;
+    };
 
     let restaurants = await db.select().from(restaurantsTable);
 
@@ -26,6 +33,24 @@ router.get("/restaurants", async (req, res) => {
           r.category.toLowerCase().includes(q) ||
           r.categoryAr.includes(q)
       );
+    }
+
+    if (hasDiscount === "true") {
+      restaurants = restaurants.filter((r) => r.discountPercent > 0);
+    }
+
+    if (isFreeDelivery === "true") {
+      restaurants = restaurants.filter((r) => r.isFreeDelivery);
+    }
+
+    if (isFastDelivery === "true") {
+      restaurants = restaurants.filter((r) => r.deliveryMinutes <= 20);
+    }
+
+    if (sortBy === "rating") {
+      restaurants = restaurants.sort((a, b) => b.rating - a.rating);
+    } else if (sortBy === "deliveryTime") {
+      restaurants = restaurants.sort((a, b) => a.deliveryMinutes - b.deliveryMinutes);
     }
 
     res.json(restaurants);

@@ -20,6 +20,10 @@ export const HealthCheckResponse = zod.object({
 export const ListRestaurantsQueryParams = zod.object({
   category: zod.coerce.string().optional(),
   search: zod.coerce.string().optional(),
+  hasDiscount: zod.coerce.boolean().optional(),
+  isFreeDelivery: zod.coerce.boolean().optional(),
+  isFastDelivery: zod.coerce.boolean().optional(),
+  sortBy: zod.enum(["rating", "deliveryTime"]).optional(),
 });
 
 export const ListRestaurantsResponseItem = zod.object({
@@ -35,6 +39,9 @@ export const ListRestaurantsResponseItem = zod.object({
   minOrder: zod.number(),
   imageUrl: zod.string(),
   isOpen: zod.boolean(),
+  isFreeDelivery: zod.boolean().optional(),
+  discountPercent: zod.number().optional(),
+  deliveryMinutes: zod.number().optional(),
   phone: zod.string().optional(),
   whatsapp: zod.string().optional(),
   address: zod.string().optional(),
@@ -61,6 +68,9 @@ export const GetRestaurantResponse = zod.object({
   minOrder: zod.number(),
   imageUrl: zod.string(),
   isOpen: zod.boolean(),
+  isFreeDelivery: zod.boolean().optional(),
+  discountPercent: zod.number().optional(),
+  deliveryMinutes: zod.number().optional(),
   phone: zod.string().optional(),
   whatsapp: zod.string().optional(),
   address: zod.string().optional(),
@@ -146,6 +156,9 @@ export const GetFeaturedResponse = zod.object({
       minOrder: zod.number(),
       imageUrl: zod.string(),
       isOpen: zod.boolean(),
+      isFreeDelivery: zod.boolean().optional(),
+      discountPercent: zod.number().optional(),
+      deliveryMinutes: zod.number().optional(),
       phone: zod.string().optional(),
       whatsapp: zod.string().optional(),
       address: zod.string().optional(),

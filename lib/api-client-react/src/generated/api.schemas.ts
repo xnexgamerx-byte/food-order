@@ -22,6 +22,9 @@ export interface Restaurant {
   minOrder: number;
   imageUrl: string;
   isOpen: boolean;
+  isFreeDelivery?: boolean;
+  discountPercent?: number;
+  deliveryMinutes?: number;
   phone?: string;
   whatsapp?: string;
   address?: string;
@@ -93,7 +96,19 @@ export interface FeaturedContent {
 export type ListRestaurantsParams = {
   category?: string;
   search?: string;
+  hasDiscount?: boolean;
+  isFreeDelivery?: boolean;
+  isFastDelivery?: boolean;
+  sortBy?: ListRestaurantsSortBy;
 };
+
+export type ListRestaurantsSortBy =
+  (typeof ListRestaurantsSortBy)[keyof typeof ListRestaurantsSortBy];
+
+export const ListRestaurantsSortBy = {
+  rating: "rating",
+  deliveryTime: "deliveryTime",
+} as const;
 
 export type GetRestaurantMenuParams = {
   category?: string;
