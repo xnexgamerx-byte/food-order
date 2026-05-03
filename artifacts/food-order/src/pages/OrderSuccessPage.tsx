@@ -1,11 +1,9 @@
 import { useLocation } from "wouter";
-import { CheckCircle2, MessageCircle, Home } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CheckCircle2, MessageCircle, Home, Receipt } from "lucide-react";
 
 export default function OrderSuccessPage() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
 
-  // Parse query params from URL
   const search = typeof window !== "undefined" ? window.location.search : "";
   const params = new URLSearchParams(search);
   const whatsappUrl = params.get("whatsapp") || "";
@@ -14,54 +12,61 @@ export default function OrderSuccessPage() {
   const total = params.get("total") || "0";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-8">
-      <div className="w-full max-w-sm space-y-6">
-        {/* Success Icon */}
-        <div className="flex flex-col items-center text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle2 className="h-12 w-12 text-green-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">تم استلام طلبك</h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            سيصل طلبك مباشرة للمطعم عبر واتساب
-          </p>
-        </div>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-sm space-y-5">
 
-        {/* Order Info Card */}
-        <div className="bg-white rounded-2xl border border-border shadow-sm p-4 space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground text-sm">رقم الطلب</span>
-            <span className="font-bold text-primary text-lg">{orderNum}</span>
+        {/* Success */}
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center">
+            <CheckCircle2 className="h-11 w-11 text-emerald-600" />
           </div>
-          <div className="flex justify-between items-center border-t pt-3">
-            <span className="text-muted-foreground text-sm">المطعم</span>
-            <span className="font-semibold text-sm text-right max-w-[180px]">{restaurantName}</span>
-          </div>
-          <div className="flex justify-between items-center border-t pt-3">
-            <span className="text-muted-foreground text-sm">إجمالي الطلب</span>
-            <span className="font-bold text-primary">{Number(total).toLocaleString()} د.ع</span>
+          <div>
+            <h1 className="text-xl font-black text-foreground">تم استلام طلبك</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              يصل طلبك للمطعم مباشرة عبر واتساب
+            </p>
           </div>
         </div>
 
-        {/* WhatsApp Button */}
+        {/* Order Card */}
+        <div className="bg-white rounded-2xl border border-border shadow-xs overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-primary/5">
+            <Receipt className="h-4 w-4 text-primary" />
+            <span className="text-sm font-bold text-primary">تفاصيل الطلب</span>
+          </div>
+          <div className="px-4 py-3 space-y-2.5 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">رقم الطلب</span>
+              <span className="font-black text-primary text-base">{orderNum}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">المطعم</span>
+              <span className="font-semibold text-right max-w-[180px]">{restaurantName}</span>
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t border-border">
+              <span className="font-bold">الإجمالي</span>
+              <span className="font-black text-primary text-base">{Number(total).toLocaleString()} د.ع</span>
+            </div>
+          </div>
+        </div>
+
+        {/* WhatsApp CTA */}
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
           data-testid="button-whatsapp"
-          className="block"
         >
-          <Button className="w-full h-13 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center gap-3 text-base font-bold py-3.5">
-            <MessageCircle className="h-6 w-6" />
-            فتح واتساب لإرسال الطلب
-          </Button>
+          <button className="w-full h-13 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center gap-3 text-base font-bold py-3.5 shadow-md transition-all active:scale-98">
+            <MessageCircle className="h-5 w-5" />
+            فتح واتساب وإرسال الطلب
+          </button>
         </a>
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-xs text-muted-foreground leading-relaxed">
           سيفتح واتساب مع تفاصيل طلبك جاهزة للإرسال للمطعم
         </p>
 
-        {/* Back Home */}
         <button
           onClick={() => setLocation("/")}
           data-testid="button-home"
