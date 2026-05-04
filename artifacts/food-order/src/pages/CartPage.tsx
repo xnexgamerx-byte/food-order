@@ -12,6 +12,32 @@ const NEIGHBORHOODS = [
   "العلم", "الدجيل", "المكيشيفة", "طوزخرماتو", "السطة", "العوجة",
 ];
 
+function Field({
+  label, id, icon: Icon, placeholder, type = "text", value, onChange, error,
+}: {
+  label: string; id: string; icon: React.ElementType; placeholder: string;
+  type?: string; value: string; onChange: (v: string) => void; error?: string;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="text-xs font-semibold text-muted-foreground mb-1.5 block">{label}</label>
+      <div className="relative">
+        <Icon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          id={id}
+          data-testid={`input-${id}`}
+          type={type}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full h-11 pr-10 pl-4 bg-background rounded-xl border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${error ? "border-destructive" : "border-border"}`}
+        />
+      </div>
+      {error && <p className="text-destructive text-xs mt-1">{error}</p>}
+    </div>
+  );
+}
+
 export default function CartPage() {
   const [, setLocation] = useLocation();
   const { items, restaurantId, restaurantName, deliveryFee, updateQuantity, removeItem, clearCart, subtotal, totalItems } = useCart();
@@ -68,31 +94,6 @@ export default function CartPage() {
       }
     );
   };
-
-  /* Field helper */
-  const Field = ({
-    label, id, icon: Icon, placeholder, type = "text", value, onChange, error,
-  }: {
-    label: string; id: string; icon: React.ElementType; placeholder: string;
-    type?: string; value: string; onChange: (v: string) => void; error?: string;
-  }) => (
-    <div>
-      <label htmlFor={id} className="text-xs font-semibold text-muted-foreground mb-1.5 block">{label}</label>
-      <div className="relative">
-        <Icon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          id={id}
-          data-testid={`input-${id}`}
-          type={type}
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`w-full h-11 pr-10 pl-4 bg-background rounded-xl border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${error ? "border-destructive" : "border-border"}`}
-        />
-      </div>
-      {error && <p className="text-destructive text-xs mt-1">{error}</p>}
-    </div>
-  );
 
   if (totalItems === 0) {
     return (
