@@ -1,0 +1,146 @@
+The Netlify deploy errored, with the following guidance provided:
+
+Diagnosis
+
+- The bundler failed when building your Netlify Function because it could not resolve two runtime modules: pino-http and pino. See the error about pino-http at [line 121](#L121)-[line 125] and the error about pino at [line 126](#L126)-[line 130]. The build summary also repeats these failures at [line 139](#L139)-[line 140](#L140).  
+- Netlify reports this as "A Netlify Function failed to require one of its dependencies" and instructs that the dependency must be present in the site's top-level package.json ([line 135](#L135)-[line 137](#L137)).
+
+Cause
+
+- The function bundle attempted to import pino-http and pino but the bundler (esbuild) could not find/install those packages in the build environment. In monorepos or workspace setups the function bundler looks to the top-level package.json for dependencies; if the packages are not listed/installed at the repo root, esbuild fails to resolve them.
+
+Solution
+
+1) Verify packages are listed and committed
+- First verify that pino and pino-http are declared in your repo's top-level package.json (not only in a subpackage). Open:
+  - https://github.com/xnexgamerx-byte/food-order/blob/main/package.json
+- If they are missing, add them to the top-level package.json. If you use npm, run at the repo root:
+```bash
+# from repo root
+npm install pino pino-http --save
+git add package.json package-lock.json
+git commit -m "chore: add pino and pino-http for Netlify functions"
+git push
+```
+- If you use yarn or pnpm, run the equivalent (yarn add pino pino-http or pnpm add pino pino-http) and commit the lockfile.
+
+2) Re-deploy
+- After committing those changes, trigger a new Netlify deploy. Netlify will install the top-level dependencies and the esbuild bundling step should be able to resolve pino and pino-http.
+
+Optional alternative (exclude from bundle)
+- If you prefer not to bundle these modules and want the function to require them at runtime, you can mark them as external for Netlify functions. Before doing this, verify the packages are still present in the top-level package.json (see step 1). Then add an external config in netlify.toml:
+```toml
+[functions]
+  external_node_modules = ["pino", "pino-http"]
+```
+- Commit netlify.toml and redeploy. This tells Netlify not to bundle those modules into the function; they must be installed at runtime (so they still need to be listed in package.json and installed).
+
+Notes
+- The import.meta warnings about CJS/ESM ([line 111](#L111)-[line 120]) are warnings and not the cause of the failure; fix them later by ensuring your function output format supports import.meta (e.g., output ESM) if needed.
+
+The relevant error logs are:
+
+Line 0: Waiting for other deploys from your team to complete. Check the queue: https://app.netlify.com/teams/xxalixx221/builds
+Line 1: build-image version: ac6eb13fbf000e5c09ad677efd8b7c3c2d0142b6 (noble-new-builds)
+Line 2: buildbot version: 1e1f172b82fc46a7a7b4b14d04d14163b44b9b01
+Line 3: Fetching cached dependencies
+Line 4: Failed to fetch cache, continuing with build
+Line 5: Starting to prepare the repo for build
+Line 6: No cached dependencies found. Cloning fresh repo
+Line 7: git clone --filter=blob:none https://github.com/xnexgamerx-byte/food-order
+Line 8: Preparing Git Reference refs/heads/main
+Line 9: Installing dependencies
+Line 10: mise ~/.config/mise/config.toml tools: python@3.14.3
+Line 11: mise ~/.config/mise/config.toml tools: ruby@3.4.8
+Line 12: mise ~/.config/mise/config.toml tools: go@1.26.2
+Line 13: v20.20.2 is already installed.
+Line 14: Now using node v20.20.2 (npm v10.8.2)
+Line 73: ​
+Line 74: build.command from netlify.toml                               
+Line 75: ────────────────────────────────────────────────────────────────
+Line 76: ​
+Line 77: $ node scripts/build-netlify.mjs
+Line 78: ⚛️  Building frontend...
+Line 79: > @workspace/food-order@0.0.0 build /opt/build/repo/artifacts/food-order
+Line 80: > vite build --config vite.config.ts
+Line 81: vite v7.3.2 building client environment for production...
+Line 82: transforming...
+Line 83: src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of 
+Line 84: rendering chunks...
+Line 85: computing gzip size...
+Line 86: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 87: dist/public/index.html                   0.77 kB │ gzip:   0.46 kB
+Line 88: dist/public/assets/index-BNMdRexE.css  109.85 kB │ gzip:  17.66 kB
+Line 89: dist/public/assets/index-BjMg9wRN.js   425.99 kB │ gzip: 134.28 kB
+Line 90: ✓ built in 3.15s
+Line 91: 🔧 Bundling API function...
+Line 92:   netlify/functions/api.mjs  2.0mb ⚠️
+Line 93: ⚡ Done in 130ms
+Line 94: ✅ Build complete!
+Line 95:    Frontend → artifacts/food-order/dist/public
+Line 96:    API function → netlify/functions/api.mjs
+Line 97: ​
+Line 98: (build.command completed in 4s)
+Line 99: ​
+Line 100: Functions bundling                                            
+Line 101: ────────────────────────────────────────────────────────────────
+Line 102: ​
+Line 111: ▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+Line 112:     netlify/functions/api.mjs:5:50:
+Line 113:       5 │ globalThis.__filename = __bannerUrl.fileURLToPath(import.meta.url);
+Line 114:         ╵                                                   ~~~~~~~~~~~
+Line 115:   You need to set the output format to "esm" for "import.meta" to work correctly.
+Line 116: ▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+Line 117:     netlify/functions/api.mjs:52627:43:
+Line 118:       52627 │ var __dirname = path.dirname(fileURLToPath(import.meta.url));
+Line 119:             ╵                                            ~~~~~~~~~~~
+Line 120:   You need to set the output format to "esm" for "import.meta" to work correctly.
+Line 121: ✘ [ERROR] Could not resolve "pino-http"
+Line 122:     netlify/functions/api.mjs:29758:21:
+Line 123:       29758 │ import pinoHttp from "pino-http";
+Line 124:             ╵                      ~~~~~~~~~~~
+Line 125:   You can mark the path "pino-http" as external to exclude it from the bundle, which will remove this error and leave the unreso
+Line 126: ✘ [ERROR] Could not resolve "pino"
+Line 127:     netlify/functions/api.mjs:52609:17:
+Line 128:       52609 │ import pino from "pino";
+Line 129:             ╵                  ~~~~~~
+Line 130:   You can mark the path "pino" as external to exclude it from the bundle, which will remove this error and leave the unresolved 
+Line 131: ​
+Line 132: Dependencies installation error                               
+Line 133: ────────────────────────────────────────────────────────────────
+Line 134: ​
+Line 135:   Error message
+Line 136:   A Netlify Function failed to require one of its dependencies.
+Line 137:   Please make sure it is present in the site's top-level "package.json".
+​
+Line 138:   Build failed with 2 errors:
+Line 139:   netlify/functions/api.mjs:29758:21: ERROR: Could not resolve "pino-http"
+Line 140:   netlify/functions/api.mjs:52609:17: ERROR: Could not resolve "pino"
+Line 141: ​
+Line 142:   Resolved config
+Line 143:   build:
+Line 144:     command: node scripts/build-netlify.mjs
+Line 145:     commandOrigin: config
+Line 146:     environment:
+Line 147:       - ADMIN_PASSWORD
+Line 148:       - DATABASE_URL
+Line 149:       - SESSION_SECRET
+Line 150:       - NODE_VERSION
+Line 152:       - NODE_ENV
+Line 153:     publish: /opt/build/repo/artifacts/food-order/dist/public
+Line 154:     publishOrigin: config
+Line 155:   functionsDirectory: /opt/build/repo/netlify/functions
+Line 156:   plugins:
+Line 157:     - inputs: {}
+Line 158:       origin: ui
+Line 159:       package: "@netlify/plugin-lighthouse"
+Line 160:   redirects:
+Line 161:     - from: /api/*
+      status: 200
+      to: /.netlify/functions/api/:splat
+    - from: /*
+      status: 200
+      to: /index.
+Line 162: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 163: Failing build: Failed to build site
+Line 164: Finished processing build request in 32.091s
