@@ -1,0 +1,168 @@
+import { Router } from "express";
+import { db } from "@workspace/db";
+import { restaurantsTable, menuItemsTable, ordersTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
+import { adminAuth, generateAdminToken, checkAdminPassword } from "../middleware/adminAuth";
+
+const router = Router();
+
+/* ─── Auth ─── */
+router.post("/admin/login", async (req, res) => {
+  const { password } = req.body as { password?: string };
+  if (!password || !checkAdminPassword(password)) {
+    return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
+  }
+  const token = generateAdminToken();
+  res.json({ token });
+});
+
+/* ─── Stats ─── */
+router.get("/admin/stats", adminAuth, async (req, res) => {
+  try {
+    const restaurants = await db.select().from(restaurantsTable);
+    const orders = await db.select().from(ordersTable).orderBy(desc(ordersTable.createdAt));
+    const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
+    const pending = orders.filter((o) => o.status === "pending").length;
+    res.json({
+      restaurantCount: restaurants.length,
+      orderCount: orders.length,
+      totalRevenue,
+      pendingOrders: pending,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ─── Restaurants ─── */
+router.get("/admin/restaurants", adminAuth, async (req, res) => {
+  try {
+    const rows = await db.select().from(restaurantsTable);
+    res.json(rows);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { nameAr, categoryAr, rating, deliveryTime, deliveryMinutes, minOrder,
+            isOpen, isFreeDelivery, discountPercent, imageUrl, whatsapp } = req.body;
+
+    const [updated] = await db
+      .update(restaurantsTable)
+      .set({
+        ...(nameAr !== undefined && { nameAr }),
+        ...(categoryAr !== undefined && { categoryAr }),
+        ...(rating !== undefined && { rating: Number(rating) }),
+        ...(deliveryTime !== undefined && { deliveryTime }),
+        ...(deliveryMinutes !== undefined && { deliveryMinutes: Number(deliveryMinutes) }),
+        ...(minOrder !== undefined && { minOrder: Number(minOrder) }),
+        ...(isOpen !== undefined && { isOpen: Boolean(isOpen) }),
+        ...(isFreeDelivery !== undefined && { isFreeDelivery: Boolean(isFreeDelivery) }),
+        ...(discountPercent !== undefined && { discountPercent: Number(discountPercent) }),
+        ...(imageUrl !== undefined && { imageUrl }),
+        ...(whatsapp !== undefined && { whatsapp }),
+      })
+      .where(eq(restaurantsTable.id, id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    res.json(updated);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ─── Menu Items ─── */
+router.get("/admin/restaurants/:id/menu", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const items = await db.select().from(menuItemsTable).where(eq(menuItemsTable.restaurantId, id));
+    res.json(items);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/admin/restaurants/:id/menu", adminAuth, async (req, res) => {
+  try {
+    const restaurantId = Number(req.params.id);
+    const { nameAr, name, descriptionAr, description, price, imageUrl, categoryAr, category } = req.body;
+    const [item] = await db.insert(menuItemsTable).values({
+      restaurantId, nameAr, name: name || nameAr, descriptionAr: descriptionAr || "",
+      description: description || "", price: Number(price),
+      imageUrl: imageUrl || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80",
+      categoryAr, category: category || categoryAr, isAvailable: true,
+    }).returning();
+    res.status(201).json(item);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/admin/menu/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { nameAr, descriptionAr, price, imageUrl, categoryAr, isAvailable } = req.body;
+    const [updated] = await db.update(menuItemsTable).set({
+      ...(nameAr !== undefined && { nameAr }),
+      ...(descriptionAr !== undefined && { descriptionAr }),
+      ...(price !== undefined && { price: Number(price) }),
+      ...(imageUrl !== undefined && { imageUrl }),
+      ...(categoryAr !== undefined && { categoryAr, category: categoryAr }),
+      ...(isAvailable !== undefined && { isAvailable: Boolean(isAvailable) }),
+    }).where(eq(menuItemsTable.id, id)).returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    res.json(updated);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/admin/menu/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    await db.delete(menuItemsTable).where(eq(menuItemsTable.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ─── Orders ─── */
+router.get("/admin/orders", adminAuth, async (req, res) => {
+  try {
+    const orders = await db.select().from(ordersTable).orderBy(desc(ordersTable.createdAt));
+    res.json(orders);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/admin/orders/:id/status", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { status } = req.body as { status: string };
+    const [updated] = await db.update(ordersTable)
+      .set({ status })
+      .where(eq(ordersTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    res.json(updated);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+export default router;
