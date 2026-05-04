@@ -17,7 +17,14 @@ import AdminMenu from "@/pages/admin/AdminMenu";
 import AdminOrders from "@/pages/admin/AdminOrders";
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+  defaultOptions: {
+    queries: {
+      staleTime: 0,
+      retry: 1,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
+    },
+  },
 });
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
