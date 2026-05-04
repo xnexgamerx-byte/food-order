@@ -18,6 +18,9 @@ export default function CartPage() {
   const { toast } = useToast();
   const createOrder = useCreateOrder();
 
+  const SERVICE_FEE = 500;
+  const total = subtotal + SERVICE_FEE;
+
   const [form, setForm] = useState({ name: "", phone: "", address: "", neighborhood: "", notes: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -49,7 +52,7 @@ export default function CartPage() {
           address: form.address,
           neighborhood: form.neighborhood,
           notes: form.notes,
-          total: subtotal,
+          total: total,
         },
       },
       {
@@ -250,9 +253,17 @@ export default function CartPage() {
               <span className="text-muted-foreground">عدد الأصناف</span>
               <span className="font-semibold">{totalItems} صنف</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">المجموع الفرعي</span>
+              <span className="font-semibold">{subtotal.toLocaleString()} د.ع</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">رسوم الخدمة</span>
+              <span className="font-semibold">{SERVICE_FEE.toLocaleString()} د.ع</span>
+            </div>
             <div className="flex justify-between pt-2 border-t border-border mt-1">
               <span className="font-bold">الإجمالي</span>
-              <span className="font-black text-primary text-base">{subtotal.toLocaleString()} د.ع</span>
+              <span className="font-black text-primary text-base">{total.toLocaleString()} د.ع</span>
             </div>
           </div>
         </div>
@@ -266,7 +277,7 @@ export default function CartPage() {
           data-testid="button-confirm-order"
           className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-2xl font-bold text-base transition-all active:scale-98 shadow-md"
         >
-          {createOrder.isPending ? "جاري إرسال الطلب..." : `تأكيد الطلب — ${subtotal.toLocaleString()} د.ع`}
+          {createOrder.isPending ? "جاري إرسال الطلب..." : `تأكيد الطلب — ${total.toLocaleString()} د.ع`}
         </button>
       </div>
     </div>
