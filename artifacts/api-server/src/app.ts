@@ -30,9 +30,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-// In production, serve the built React app as static files
-if (isProduction) {
-  // The built frontend is at ../../food-order/dist/public relative to dist/
+// In production (Render), serve the built React app as static files.
+// Skip this on Netlify — Netlify serves static files directly.
+const isNetlify = !!process.env.NETLIFY;
+if (isProduction && !isNetlify) {
   const staticDir = path.resolve(__dirname, "../../food-order/dist/public");
   app.use(express.static(staticDir));
 

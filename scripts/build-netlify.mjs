@@ -1,0 +1,76 @@
+/**
+ * Netlify build script:
+ * 1. Builds the React frontend (Vite)
+ * 2. Bundles the Express API into a Netlify serverless function
+ */
+
+import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
+import { rm, mkdir } from "node:fs/promises";
+import { build as esbuild } from "esbuild";
+
+globalThis.require = createRequire(import.meta.url);
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, "..");
+
+// ── 1. Build the React frontend ───────────────────────────────────────────────
+console.log("⚛️  Building frontend...");
+execSync("pnpm --filter @workspace/food-order run build", {
+  cwd: root,
+  stdio: "inherit",
+  env: { ...process.env, NODE_ENV: "production", BASE_PATH: "/" },
+});
+
+// ── 3. Bundle the Netlify API function ───────────────────────────────────────
+console.log("🔧 Bundling API function...");
+const functionsOut = path.resolve(root, "netlify/functions");
+await rm(functionsOut, { recursive: true, force: true });
+await mkdir(functionsOut, { recursive: true });
+
+await esbuild({
+  entryPoints: [path.resolve(root, "netlify/src/api.ts")],
+  platform: "node",
+  target: "node20",
+  bundle: true,
+  format: "esm",
+  outfile: path.resolve(functionsOut, "api.mjs"),
+  logLevel: "info",
+  sourcemap: false,
+  nodePaths: [
+    path.resolve(root, "node_modules"),
+    path.resolve(root, "artifacts/api-server/node_modules"),
+    path.resolve(root, "lib/db/node_modules"),
+  ],
+  external: [
+    "*.node",
+    "sharp",
+    "better-sqlite3",
+    "sqlite3",
+    "canvas",
+    "bcrypt",
+    "argon2",
+    "fsevents",
+    "pg-native",
+    "pino",
+    "pino-http",
+    "pino-pretty",
+    "thread-stream",
+  ],
+  banner: {
+    js: `
+import { createRequire as __bannerCrReq } from 'node:module';
+import __bannerPath from 'node:path';
+import __bannerUrl from 'node:url';
+globalThis.require = __bannerCrReq(import.meta.url);
+globalThis.__filename = __bannerUrl.fileURLToPath(import.meta.url);
+globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
+    `.trim(),
+  },
+});
+
+console.log("✅ Build complete!");
+console.log("   Frontend → artifacts/food-order/dist/public");
+console.log("   API function → netlify/functions/api.mjs");
