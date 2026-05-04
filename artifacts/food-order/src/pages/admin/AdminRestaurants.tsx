@@ -19,6 +19,22 @@ const EMPTY_REST = {
   imageUrl: "", whatsapp: "", discountPercent: "0",
 };
 
+function Field({ label, value, onChange, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string;
+}) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full h-9 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right"
+      />
+    </div>
+  );
+}
+
 export default function AdminRestaurants() {
   const [, setLocation] = useLocation();
   const { token } = useAdmin();
@@ -79,19 +95,7 @@ export default function AdminRestaurants() {
     } finally { setSaving(false); }
   };
 
-  const Field = ({ label, value, onChange, type = "text" }: {
-    label: string; value: string; onChange: (v: string) => void; type?: string;
-  }) => (
-    <div>
-      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full h-9 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right" />
-    </div>
-  );
-
-  const EditableCell = ({ r, field, label, type = "text" }: {
-    r: Restaurant; field: keyof Restaurant; label: string; type?: string;
-  }) => {
+  const renderEditableCell = (r: Restaurant, field: keyof Restaurant, label: string, type = "text") => {
     const isEditing = editing?.id === r.id && editing?.field === field;
     const val = String(r[field]);
     return (
@@ -207,13 +211,13 @@ export default function AdminRestaurants() {
 
               {/* Fields */}
               <div className="px-4 py-2">
-                <EditableCell r={r} field="nameAr" label="اسم المطعم" />
-                <EditableCell r={r} field="categoryAr" label="التصنيف" />
-                <EditableCell r={r} field="discountPercent" label="الخصم %" type="number" />
-                <EditableCell r={r} field="minOrder" label="الحد الأدنى (د.ع)" type="number" />
-                <EditableCell r={r} field="deliveryTime" label="وقت التوصيل" />
-                <EditableCell r={r} field="whatsapp" label="واتساب" type="tel" />
-                <EditableCell r={r} field="imageUrl" label="رابط الصورة" />
+                {renderEditableCell(r, "nameAr", "اسم المطعم")}
+                {renderEditableCell(r, "categoryAr", "التصنيف")}
+                {renderEditableCell(r, "discountPercent", "الخصم %", "number")}
+                {renderEditableCell(r, "minOrder", "الحد الأدنى (د.ع)", "number")}
+                {renderEditableCell(r, "deliveryTime", "وقت التوصيل")}
+                {renderEditableCell(r, "whatsapp", "واتساب", "tel")}
+                {renderEditableCell(r, "imageUrl", "رابط الصورة")}
 
                 {/* Toggles */}
                 <div className="flex gap-3 pt-3 pb-1">

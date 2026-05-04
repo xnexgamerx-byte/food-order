@@ -11,6 +11,22 @@ interface MenuItem {
 
 const EMPTY_ITEM = { nameAr: "", descriptionAr: "", price: "", imageUrl: "", categoryAr: "" };
 
+function Field({ label, value, onChange, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string;
+}) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full h-9 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right"
+      />
+    </div>
+  );
+}
+
 export default function AdminMenu() {
   const params = useParams<{ id: string }>();
   const restId = Number(params.id);
@@ -68,14 +84,6 @@ export default function AdminMenu() {
       setShowAdd(false);
     } finally { setSaving(false); }
   };
-
-  const Field = ({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) => (
-    <div>
-      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full h-9 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right" />
-    </div>
-  );
 
   return (
     <AdminLayout>
