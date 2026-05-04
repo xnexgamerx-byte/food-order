@@ -8,6 +8,9 @@
   PNPM_VERSION = "10"
   NODE_ENV = "production"
 
+[functions]
+  node_bundler = "none"
+
 # Redirect all /api/* requests to the serverless function
 [[redirects]]
   from = "/api/*"

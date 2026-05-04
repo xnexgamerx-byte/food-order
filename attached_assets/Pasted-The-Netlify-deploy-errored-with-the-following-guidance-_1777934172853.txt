@@ -1,0 +1,121 @@
+The Netlify deploy errored, with the following guidance provided:
+
+Diagnosis
+- Relevant log lines: functions packaging start at [#L92-L97], the build ultimately failed with a missing dependency at [#L107-L110], and Netlify reports the build exit at [#L99] and [#L132].
+- Error type: dependency resolution error in Netlify Function bundling.
+- Cause: The function bundler failed because it could not find the module "supports-color" required at runtime by the function bundle. See the error: [#L107-L110]. The functions are packaged from netlify/functions (see [#L92-L97]), and Netlify requires any modules used by functions to be present in the site's top-level package.json.
+
+Solution
+1) Verify whether supports-color is listed at the repo root
+- Open the top-level package.json (repo root): https://github.com/xnexgamerx-byte/food-order/blob/main/package.json
+- If you use a monorepo/workspace (the build shows @workspace/food-order), make sure supports-color is present in the top-level package.json (not only inside a workspace package). Netlify resolves function dependencies from the top-level.
+
+2) If supports-color is missing at the top-level, add and commit it
+- From the repository root run one of these commands and commit both package.json and the lockfile (package-lock.json or yarn.lock):
+
+```bash
+# using npm
+npm install --save supports-color
+
+# or using yarn
+yarn add supports-color
+```
+
+- Commit and push the changes:
+```bash
+git add package.json package-lock.json   # or yarn.lock
+git commit -m "chore: add supports-color for Netlify Functions"
+git push
+```
+
+3) Re-deploy on Netlify
+- Trigger a new deploy (Netlify will install the top-level dependencies and re-bundle functions).
+- If the issue persists, clear the build cache on Netlify and re-deploy.
+
+Notes
+- The "import.meta" warning in the logs is non-fatal (see [#L71-L76]) and can be addressed later by ensuring the function bundler output format is ESM if you need import.meta, but it is not the cause of this failure.
+- If you already have supports-color in a workspace package but not in the root, move or add it to the root package.json so Netlify can install it for function bundling.
+
+The relevant error logs are:
+
+Line 53: ​
+Line 54: build.command from netlify.toml                               
+Line 55: ────────────────────────────────────────────────────────────────
+Line 56: ​
+Line 57: $ node scripts/build-netlify.mjs
+Line 58: ⚛️  Building frontend...
+Line 59: > @workspace/food-order@0.0.0 build /opt/build/repo/artifacts/food-order
+Line 60: > vite build --config vite.config.ts
+Line 61: vite v7.3.2 building client environment for production...
+Line 62: transforming...
+Line 63: src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of 
+Line 64: rendering chunks...
+Line 65: computing gzip size...
+Line 66: dist/public/index.html                   0.77 kB │ gzip:   0.46 kB
+Line 67: dist/public/assets/index-BNMdRexE.css  109.85 kB │ gzip:  17.66 kB
+Line 68: dist/public/assets/index-BjMg9wRN.js   425.99 kB │ gzip: 134.28 kB
+Line 69: ✓ built in 3.56s
+Line 70: 🔧 Bundling API function...
+Line 71: ▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+Line 72:     artifacts/api-server/src/app.ts:9:45:
+Line 73:       9 │ const __dirname = path.dirname(fileURLToPath(import.meta.url));
+Line 74:         ╵                                              ~~~~~~~~~~~
+Line 75:   You need to set the output format to "esm" for "import.meta" to work correctly.
+Line 76: 1 warning
+Line 77:   netlify/functions/api.js                     2.2mb ⚠️
+Line 78:   netlify/functions/pino-worker.js           151.9kb
+Line 79:   netlify/functions/pino-file.js             140.9kb
+Line 80:   netlify/functions/pino-pretty.js           113.0kb
+Line 81:   netlify/functions/thread-stream-worker.js    6.6kb
+Line 82: ⚡ Done in 403ms
+Line 83: ✅ Build complete!
+Line 84:    Frontend → artifacts/food-order/dist/public
+Line 85:    API function → netlify/functions/api.js
+Line 86: ​
+Line 87: (build.command completed in 5.1s)
+Line 89: Functions bundling                                            
+Line 90: ────────────────────────────────────────────────────────────────
+Line 91: ​
+Line 92: Packaging Functions from netlify/functions directory:
+Line 93:  - api.js
+Line 94:  - pino-file.js
+Line 95:  - pino-pretty.js
+Line 96:  - pino-worker.js
+Line 97:  - thread-stream-worker.js
+Line 98: ​
+Line 99: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 100: ​
+Line 101: Dependencies installation error                               
+Line 102: ────────────────────────────────────────────────────────────────
+Line 103: ​
+Line 104:   Error message
+Line 105:   A Netlify Function failed to require one of its dependencies.
+Line 106:   Please make sure it is present in the site's top-level "package.json".
+​
+Line 107:   In file "/opt/build/repo/netlify/functions/api.js"
+Line 108:   Cannot find module 'supports-color'
+Line 109:   Require stack:
+Line 110:   - /opt/buildhome/node-deps/node_modules/@netlify/zip-it-and-ship-it/dist/runtimes/node/bundlers/zisi/resolve.js
+Line 111: ​
+Line 112:   Resolved config
+Line 113:   build:
+Line 114:     command: node scripts/build-netlify.mjs
+Line 115:     commandOrigin: config
+Line 122:       - NODE_ENV
+Line 123:     publish: /opt/build/repo/artifacts/food-order/dist/public
+Line 124:     publishOrigin: config
+Line 125:   functionsDirectory: /opt/build/repo/netlify/functions
+Line 126:   plugins:
+Line 127:     - inputs: {}
+Line 128:       origin: ui
+Line 129:       package: "@netlify/plugin-lighthouse"
+Line 130:   redirects:
+Line 131:     - from: /api/*
+      status: 200
+      to: /.netlify/functions/api/:splat
+    - from: /*
+      status: 200
+      to: /index.
+Line 132: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 133: Failing build: Failed to build site
+Line 134: Finished processing build request in 21.53s
