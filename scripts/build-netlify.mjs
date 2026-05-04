@@ -1,7 +1,7 @@
 /**
  * Netlify build script:
  * 1. Builds the React frontend (Vite)
- * 2. Bundles the Express API into a Netlify serverless function
+ * 2. Bundles the Express API into a Netlify serverless function (CJS)
  */
 
 import { createRequire } from "node:module";
@@ -25,7 +25,7 @@ execSync("pnpm --filter @workspace/food-order run build", {
   env: { ...process.env, NODE_ENV: "production", BASE_PATH: "/" },
 });
 
-// ── 2. Bundle the Netlify API function ───────────────────────────────────────
+// ── 2. Bundle the Netlify API function (CJS for Lambda compatibility) ─────────
 console.log("🔧 Bundling API function...");
 const functionsOut = path.resolve(root, "netlify/functions");
 await rm(functionsOut, { recursive: true, force: true });
@@ -36,9 +36,8 @@ await esbuild({
   platform: "node",
   target: "node20",
   bundle: true,
-  format: "esm",
+  format: "cjs",
   outdir: functionsOut,
-  outExtension: { ".js": ".mjs" },
   logLevel: "info",
   sourcemap: false,
   plugins: [pinoPlugin({ transports: ["pino-pretty"] })],
@@ -58,18 +57,8 @@ await esbuild({
     "fsevents",
     "pg-native",
   ],
-  banner: {
-    js: `
-import { createRequire as __bannerCrReq } from 'node:module';
-import __bannerPath from 'node:path';
-import __bannerUrl from 'node:url';
-globalThis.require = __bannerCrReq(import.meta.url);
-globalThis.__filename = __bannerUrl.fileURLToPath(import.meta.url);
-globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
-    `.trim(),
-  },
 });
 
 console.log("✅ Build complete!");
 console.log("   Frontend → artifacts/food-order/dist/public");
-console.log("   API function → netlify/functions/api.mjs");
+console.log("   API function → netlify/functions/api.js");
