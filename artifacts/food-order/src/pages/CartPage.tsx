@@ -14,12 +14,12 @@ const NEIGHBORHOODS = [
 
 export default function CartPage() {
   const [, setLocation] = useLocation();
-  const { items, restaurantId, restaurantName, updateQuantity, removeItem, clearCart, subtotal, totalItems } = useCart();
+  const { items, restaurantId, restaurantName, deliveryFee, updateQuantity, removeItem, clearCart, subtotal, totalItems } = useCart();
   const { toast } = useToast();
   const createOrder = useCreateOrder();
 
   const SERVICE_FEE = 500;
-  const total = subtotal + SERVICE_FEE;
+  const total = subtotal + SERVICE_FEE + deliveryFee;
 
   const [form, setForm] = useState({ name: "", phone: "", address: "", neighborhood: "", notes: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -256,6 +256,16 @@ export default function CartPage() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">المجموع الفرعي</span>
               <span className="font-semibold">{subtotal.toLocaleString()} د.ع</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">رسوم التوصيل</span>
+              <span className="font-semibold">
+                {deliveryFee === 0 ? (
+                  <span className="text-emerald-600">مجاني</span>
+                ) : (
+                  `${deliveryFee.toLocaleString()} د.ع`
+                )}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">رسوم الخدمة</span>

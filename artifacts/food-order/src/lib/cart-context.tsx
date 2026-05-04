@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import type { OrderItemInput, Restaurant } from "@workspace/api-client-react";
+import type { OrderItemInput } from "@workspace/api-client-react";
 
 export interface CartItem extends OrderItemInput {
   imageUrl: string;
@@ -9,7 +9,8 @@ interface CartContextType {
   items: CartItem[];
   restaurantId: number | null;
   restaurantName: string | null;
-  addItem: (item: CartItem, rId: number, rName: string) => void;
+  deliveryFee: number;
+  addItem: (item: CartItem, rId: number, rName: string, deliveryFee?: number) => void;
   removeItem: (menuItemId: number) => void;
   updateQuantity: (menuItemId: number, quantity: number) => void;
   clearCart: () => void;
@@ -37,12 +38,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return null;
     }
   });
-  
+
   const [restaurantName, setRestaurantName] = useState<string | null>(() => {
     try {
       return localStorage.getItem("cart_restaurant_name");
     } catch {
       return null;
+    }
+  });
+
+  const [deliveryFee, setDeliveryFee] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem("cart_delivery_fee");
+      return stored ? parseInt(stored) : 0;
+    } catch {
+      return 0;
     }
   });
 
@@ -52,27 +62,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem("cart_restaurant_id");
     if (restaurantName) localStorage.setItem("cart_restaurant_name", restaurantName);
     else localStorage.removeItem("cart_restaurant_name");
-  }, [items, restaurantId, restaurantName]);
+    localStorage.setItem("cart_delivery_fee", deliveryFee.toString());
+  }, [items, restaurantId, restaurantName, deliveryFee]);
 
-  const addItem = (item: CartItem, rId: number, rName: string) => {
+  const addItem = (item: CartItem, rId: number, rName: string, fee = 0) => {
     if (restaurantId !== null && restaurantId !== rId) {
       if (window.confirm("إضافة عناصر من مطعم آخر سيؤدي إلى مسح السلة الحالية. هل تريد المتابعة؟")) {
         setItems([item]);
         setRestaurantId(rId);
         setRestaurantName(rName);
+        setDeliveryFee(fee);
       }
       return;
     }
 
     setRestaurantId(rId);
     setRestaurantName(rName);
-    
+    setDeliveryFee(fee);
+
     setItems((prev) => {
       const existing = prev.find((i) => i.menuItemId === item.menuItemId);
       if (existing) {
-        return prev.map((i) => 
-          i.menuItemId === item.menuItemId 
-            ? { ...i, quantity: i.quantity + item.quantity } 
+        return prev.map((i) =>
+          i.menuItemId === item.menuItemId
+            ? { ...i, quantity: i.quantity + item.quantity }
             : i
         );
       }
@@ -86,6 +99,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (newItems.length === 0) {
         setRestaurantId(null);
         setRestaurantName(null);
+        setDeliveryFee(0);
       }
       return newItems;
     });
@@ -96,8 +110,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem(menuItemId);
       return;
     }
-    
-    setItems((prev) => prev.map((i) => 
+    setItems((prev) => prev.map((i) =>
       i.menuItemId === menuItemId ? { ...i, quantity } : i
     ));
   };
@@ -106,6 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
     setRestaurantId(null);
     setRestaurantName(null);
+    setDeliveryFee(0);
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -113,7 +127,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider value={{
-      items, restaurantId, restaurantName, addItem, removeItem, updateQuantity, clearCart, totalItems, subtotal
+      items, restaurantId, restaurantName, deliveryFee,
+      addItem, removeItem, updateQuantity, clearCart, totalItems, subtotal,
     }}>
       {children}
     </CartContext.Provider>
