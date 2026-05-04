@@ -46,6 +46,44 @@ router.get("/admin/restaurants", adminAuth, async (req, res) => {
   }
 });
 
+router.post("/admin/restaurants", adminAuth, async (req, res) => {
+  try {
+    const { nameAr, categoryAr, deliveryTime, deliveryMinutes, minOrder,
+            imageUrl, whatsapp, isOpen, isFreeDelivery, discountPercent } = req.body;
+    const [created] = await db.insert(restaurantsTable).values({
+      nameAr: nameAr || "مطعم جديد",
+      name: nameAr || "New Restaurant",
+      categoryAr: categoryAr || "متنوع",
+      category: categoryAr || "Various",
+      deliveryTime: deliveryTime || "20-35 د",
+      deliveryMinutes: Number(deliveryMinutes) || 30,
+      minOrder: Number(minOrder) || 5000,
+      imageUrl: imageUrl || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80",
+      whatsapp: whatsapp || "",
+      rating: 4.0,
+      isOpen: isOpen !== undefined ? Boolean(isOpen) : true,
+      isFreeDelivery: isFreeDelivery !== undefined ? Boolean(isFreeDelivery) : false,
+      discountPercent: Number(discountPercent) || 0,
+    }).returning();
+    res.status(201).json(created);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/admin/restaurants/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    await db.delete(menuItemsTable).where(eq(menuItemsTable.restaurantId, id));
+    await db.delete(restaurantsTable).where(eq(restaurantsTable.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
