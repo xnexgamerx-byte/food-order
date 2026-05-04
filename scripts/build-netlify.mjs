@@ -41,6 +41,12 @@ await esbuild({
   logLevel: "info",
   sourcemap: false,
   plugins: [pinoPlugin({ transports: ["pino-pretty"] })],
+  banner: {
+    js: `const __importMetaUrl = require("url").pathToFileURL(__filename).href;`,
+  },
+  define: {
+    "import.meta.url": "__importMetaUrl",
+  },
   nodePaths: [
     path.resolve(root, "node_modules"),
     path.resolve(root, "artifacts/api-server/node_modules"),
