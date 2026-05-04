@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 import { rm, mkdir } from "node:fs/promises";
 import { build as esbuild } from "esbuild";
+import pinoPlugin from "esbuild-plugin-pino";
 
 globalThis.require = createRequire(import.meta.url);
 
@@ -24,21 +25,23 @@ execSync("pnpm --filter @workspace/food-order run build", {
   env: { ...process.env, NODE_ENV: "production", BASE_PATH: "/" },
 });
 
-// ── 3. Bundle the Netlify API function ───────────────────────────────────────
+// ── 2. Bundle the Netlify API function ───────────────────────────────────────
 console.log("🔧 Bundling API function...");
 const functionsOut = path.resolve(root, "netlify/functions");
 await rm(functionsOut, { recursive: true, force: true });
 await mkdir(functionsOut, { recursive: true });
 
 await esbuild({
-  entryPoints: [path.resolve(root, "netlify/src/api.ts")],
+  entryPoints: { api: path.resolve(root, "netlify/src/api.ts") },
   platform: "node",
   target: "node20",
   bundle: true,
   format: "esm",
-  outfile: path.resolve(functionsOut, "api.mjs"),
+  outdir: functionsOut,
+  outExtension: { ".js": ".mjs" },
   logLevel: "info",
   sourcemap: false,
+  plugins: [pinoPlugin({ transports: ["pino-pretty"] })],
   nodePaths: [
     path.resolve(root, "node_modules"),
     path.resolve(root, "artifacts/api-server/node_modules"),
@@ -54,10 +57,6 @@ await esbuild({
     "argon2",
     "fsevents",
     "pg-native",
-    "pino",
-    "pino-http",
-    "pino-pretty",
-    "thread-stream",
   ],
   banner: {
     js: `

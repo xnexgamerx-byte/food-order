@@ -8,10 +8,6 @@
   PNPM_VERSION = "10"
   NODE_ENV = "production"
 
-[functions]
-  external_node_modules = ["pino", "pino-http", "pino-pretty", "thread-stream"]
-  node_bundler = "esbuild"
-
 # Redirect all /api/* requests to the serverless function
 [[redirects]]
   from = "/api/*"
