@@ -15,10 +15,13 @@ run = "pnpm --filter @workspace/api-server run dev"
 [services.production]
 
 [services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
+# Build the React frontend first, then compile the API server.
+# Express serves the built frontend as static files in production (see app.ts).
+args = ["sh", "-c", "pnpm --filter @workspace/food-order run build && pnpm --filter @workspace/api-server run build"]
 
 [services.production.build.env]
 NODE_ENV = "production"
+BASE_PATH = "/"
 
 [services.production.run]
 # we don't run through pnpm to make startup faster in production
