@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "منصة طلب الطعام - صلاح الدين"
+title = "طلبات اوفرلك"
 version = "1.0.0"
 id = "artifacts/food-order"
 router = "path"

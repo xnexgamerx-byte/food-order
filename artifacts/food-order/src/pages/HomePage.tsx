@@ -73,7 +73,7 @@ export default function HomePage() {
         <img src={HERO_IMAGE} alt="food" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/70 via-blue-900/40 to-transparent flex flex-col justify-center px-5">
           <h1 className="text-white text-lg font-bold leading-snug">ما الذي تشتهيه اليوم؟</h1>
-          <p className="text-white/80 text-xs mt-0.5">اطلب من أفضل مطاعم صلاح الدين</p>
+          <p className="text-white/80 text-xs mt-0.5">اطلب من أفضل المطاعم عبر طلبات اوفرلك</p>
         </div>
       </div>
 
