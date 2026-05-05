@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { ArrowRight, Plus, Trash2, Edit2, Check, X, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Plus, Trash2, Edit2, Eye, EyeOff } from "lucide-react";
 import { useAdmin, adminFetch } from "@/lib/admin-context";
+import { ImageUpload } from "@/components/ImageUpload";
 import AdminLayout from "./AdminLayout";
 
 interface MenuItem {
@@ -111,7 +112,7 @@ export default function AdminMenu() {
             <Field label="الوصف" value={newItem.descriptionAr} onChange={(v) => setNewItem((p) => ({ ...p, descriptionAr: v }))} />
             <Field label="السعر (د.ع) *" value={newItem.price} onChange={(v) => setNewItem((p) => ({ ...p, price: v }))} type="number" />
             <Field label="الفئة" value={newItem.categoryAr} onChange={(v) => setNewItem((p) => ({ ...p, categoryAr: v }))} />
-            <Field label="رابط الصورة" value={newItem.imageUrl} onChange={(v) => setNewItem((p) => ({ ...p, imageUrl: v }))} />
+            <ImageUpload label="صورة الصنف" value={newItem.imageUrl} onChange={(v) => setNewItem((p) => ({ ...p, imageUrl: v }))} />
             <div className="flex gap-2 pt-1">
               <button onClick={addItem} disabled={saving} className="flex-1 h-10 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-60">
                 {saving ? "جاري الحفظ..." : "حفظ"}
@@ -132,7 +133,7 @@ export default function AdminMenu() {
                   <Field label="الوصف" value={editData.descriptionAr || ""} onChange={(v) => setEditData((p) => ({ ...p, descriptionAr: v }))} />
                   <Field label="السعر (د.ع)" value={String(editData.price || "")} onChange={(v) => setEditData((p) => ({ ...p, price: Number(v) }))} type="number" />
                   <Field label="الفئة" value={editData.categoryAr || ""} onChange={(v) => setEditData((p) => ({ ...p, categoryAr: v }))} />
-                  <Field label="رابط الصورة" value={editData.imageUrl || ""} onChange={(v) => setEditData((p) => ({ ...p, imageUrl: v }))} />
+                  <ImageUpload label="صورة الصنف" value={editData.imageUrl || ""} onChange={(v) => setEditData((p) => ({ ...p, imageUrl: v }))} />
                   <div className="flex gap-2">
                     <button onClick={saveEdit} disabled={saving} className="flex-1 h-9 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-60">
                       {saving ? "..." : "حفظ"}

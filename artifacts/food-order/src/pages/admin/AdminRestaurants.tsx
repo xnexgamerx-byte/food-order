@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, Edit2, Check, X, ToggleLeft, ToggleRight, Plus, Trash2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAdmin, adminFetch } from "@/lib/admin-context";
+import { ImageUpload } from "@/components/ImageUpload";
 import AdminLayout from "./AdminLayout";
 
 interface Restaurant {
@@ -168,7 +169,7 @@ export default function AdminRestaurants() {
               <Field label="الخصم %" value={newRest.discountPercent} onChange={(v) => setNewRest((p) => ({ ...p, discountPercent: v }))} type="number" />
               <Field label="واتساب" value={newRest.whatsapp} onChange={(v) => setNewRest((p) => ({ ...p, whatsapp: v }))} />
             </div>
-            <Field label="رابط الصورة" value={newRest.imageUrl} onChange={(v) => setNewRest((p) => ({ ...p, imageUrl: v }))} />
+            <ImageUpload label="صورة المطعم" value={newRest.imageUrl} onChange={(v) => setNewRest((p) => ({ ...p, imageUrl: v }))} />
             <div className="flex gap-2 pt-1">
               <button onClick={addRestaurant} disabled={saving || !newRest.nameAr}
                 className="flex-1 h-10 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-60">
@@ -217,7 +218,15 @@ export default function AdminRestaurants() {
                 {renderEditableCell(r, "minOrder", "الحد الأدنى (د.ع)", "number")}
                 {renderEditableCell(r, "deliveryTime", "وقت التوصيل")}
                 {renderEditableCell(r, "whatsapp", "واتساب", "tel")}
-                {renderEditableCell(r, "imageUrl", "رابط الصورة")}
+
+                {/* Image upload */}
+                <div className="py-3 border-b border-border">
+                  <ImageUpload
+                    label="صورة المطعم"
+                    value={r.imageUrl}
+                    onChange={(v) => save(r.id, "imageUrl", v)}
+                  />
+                </div>
 
                 {/* Toggles */}
                 <div className="flex gap-3 pt-3 pb-1">
