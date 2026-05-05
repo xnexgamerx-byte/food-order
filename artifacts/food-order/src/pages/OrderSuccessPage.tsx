@@ -1,8 +1,10 @@
+import { useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { CheckCircle2, MessageCircle, Home, Receipt } from "lucide-react";
 
 export default function OrderSuccessPage() {
   const [, setLocation] = useLocation();
+  const openedRef = useRef(false);
 
   const search = typeof window !== "undefined" ? window.location.search : "";
   const params = new URLSearchParams(search);
@@ -10,6 +12,17 @@ export default function OrderSuccessPage() {
   const orderNum = params.get("orderNum") || "";
   const restaurantName = params.get("restaurantName") || "";
   const total = params.get("total") || "0";
+
+  // Auto-open WhatsApp once after order is created so the message is sent
+  // immediately to the restaurant's WhatsApp number.
+  useEffect(() => {
+    if (!whatsappUrl || openedRef.current) return;
+    openedRef.current = true;
+    const t = setTimeout(() => {
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    }, 800);
+    return () => clearTimeout(t);
+  }, [whatsappUrl]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
@@ -23,7 +36,7 @@ export default function OrderSuccessPage() {
           <div>
             <h1 className="text-xl font-black text-foreground">تم استلام طلبك</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              يصل طلبك للمطعم مباشرة عبر واتساب
+              سيُفتح واتساب المطعم تلقائياً لإرسال الطلب
             </p>
           </div>
         </div>
@@ -59,12 +72,12 @@ export default function OrderSuccessPage() {
         >
           <button className="w-full h-13 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center gap-3 text-base font-bold py-3.5 shadow-md transition-all active:scale-98">
             <MessageCircle className="h-5 w-5" />
-            فتح واتساب وإرسال الطلب
+            فتح واتساب يدوياً
           </button>
         </a>
 
         <p className="text-center text-xs text-muted-foreground leading-relaxed">
-          سيفتح واتساب مع تفاصيل طلبك جاهزة للإرسال للمطعم
+          إذا لم يفتح واتساب تلقائياً، اضغط الزر أعلاه
         </p>
 
         <button
