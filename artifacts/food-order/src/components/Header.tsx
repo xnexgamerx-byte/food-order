@@ -22,8 +22,11 @@ export function Header() {
           <span className="text-lg font-black text-primary tracking-tight">طلبات اوفرلك</span>
         </Link>
 
-        {/* Spacer to keep logo centered */}
-        <span className="w-9 h-9" aria-hidden="true" />
+        {/* Location — left side */}
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <span className="text-xs">📍</span>
+          <span className="text-xs font-semibold text-foreground">صلاح الدين</span>
+        </div>
       </div>
     </header>
   );
