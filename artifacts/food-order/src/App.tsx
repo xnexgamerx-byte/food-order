@@ -10,6 +10,7 @@ import HomePage from "@/pages/HomePage";
 import RestaurantPage from "@/pages/RestaurantPage";
 import CartPage from "@/pages/CartPage";
 import OrderSuccessPage from "@/pages/OrderSuccessPage";
+import MyOrdersPage from "@/pages/MyOrdersPage";
 import AdminLogin from "@/pages/admin/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRestaurants from "@/pages/admin/AdminRestaurants";
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/restaurant/:id" component={RestaurantPage} />
       <Route path="/cart" component={CartPage} />
       <Route path="/order-success/:id" component={OrderSuccessPage} />
+      <Route path="/my-orders" component={MyOrdersPage} />
 
       {/* Admin routes */}
       <Route path="/admin" component={AdminLogin} />

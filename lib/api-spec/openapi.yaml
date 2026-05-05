@@ -151,6 +151,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
 
+  /orders/by-phone/{phone}:
+    get:
+      operationId: getOrdersByPhone
+      tags: [orders]
+      summary: List all orders for a customer phone number
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
   /featured:
     get:
       operationId: getFeatured

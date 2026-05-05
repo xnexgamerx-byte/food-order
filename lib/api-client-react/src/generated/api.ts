@@ -565,6 +565,93 @@ export const useCreateOrder = <
 };
 
 /**
+ * @summary List all orders for a customer phone number
+ */
+export const getGetOrdersByPhoneUrl = (phone: string) => {
+  return `/api/orders/by-phone/${phone}`;
+};
+
+export const getOrdersByPhone = async (
+  phone: string,
+  options?: RequestInit,
+): Promise<Order[]> => {
+  return customFetch<Order[]>(getGetOrdersByPhoneUrl(phone), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOrdersByPhoneQueryKey = (phone: string) => {
+  return [`/api/orders/by-phone/${phone}`] as const;
+};
+
+export const getGetOrdersByPhoneQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrdersByPhone>>,
+  TError = ErrorType<unknown>,
+>(
+  phone: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOrdersByPhone>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetOrdersByPhoneQueryKey(phone);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOrdersByPhone>>
+  > = ({ signal }) => getOrdersByPhone(phone, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!phone,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOrdersByPhone>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOrdersByPhoneQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrdersByPhone>>
+>;
+export type GetOrdersByPhoneQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all orders for a customer phone number
+ */
+
+export function useGetOrdersByPhone<
+  TData = Awaited<ReturnType<typeof getOrdersByPhone>>,
+  TError = ErrorType<unknown>,
+>(
+  phone: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOrdersByPhone>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOrdersByPhoneQueryOptions(phone, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get featured restaurants and popular items
  */
 export const getGetFeaturedUrl = () => {

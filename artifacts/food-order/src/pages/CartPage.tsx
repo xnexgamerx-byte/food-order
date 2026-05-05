@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCreateOrder } from "@workspace/api-client-react";
 import { useCart } from "@/lib/cart-context";
 import { useToast } from "@/hooks/use-toast";
+import { getCustomer, saveCustomer } from "@/lib/customer";
 
 const NEIGHBORHOODS = [
   "تكريت", "بيجي", "الدور", "سامراء", "الشرقاط", "بلد", "الضلوعية",
@@ -47,7 +48,16 @@ export default function CartPage() {
   const SERVICE_FEE = 500;
   const total = subtotal + SERVICE_FEE + deliveryFee;
 
-  const [form, setForm] = useState({ name: "", phone: "", address: "", neighborhood: "", notes: "" });
+  const [form, setForm] = useState(() => {
+    const c = getCustomer();
+    return {
+      name: c.name || "",
+      phone: c.phone || "",
+      address: c.address || "",
+      neighborhood: c.neighborhood || "",
+      notes: "",
+    };
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
@@ -83,6 +93,12 @@ export default function CartPage() {
       },
       {
         onSuccess: (order) => {
+          saveCustomer({
+            name: form.name,
+            phone: form.phone,
+            address: form.address,
+            neighborhood: form.neighborhood,
+          });
           clearCart();
           setLocation(
             `/order-success/${order.id}?whatsapp=${encodeURIComponent(order.whatsappUrl)}&orderNum=${order.orderNumber}&restaurantName=${encodeURIComponent(order.restaurantName)}&total=${order.total}`

@@ -1,10 +1,34 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { ordersTable, restaurantsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { CreateOrderBody } from "@workspace/api-zod";
 
 const router = Router();
+
+router.get("/orders/by-phone/:phone", async (req, res) => {
+  try {
+    const phone = String(req.params["phone"] || "").trim();
+    if (!phone) {
+      return res.status(400).json({ error: "phone is required" });
+    }
+    const rows = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.customerPhone, phone))
+      .orderBy(desc(ordersTable.createdAt));
+    const parsed = rows.map((o) => ({
+      ...o,
+      items: (() => {
+        try { return JSON.parse(o.items); } catch { return []; }
+      })(),
+    }));
+    res.json(parsed);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 router.post("/orders", async (req, res) => {
   try {

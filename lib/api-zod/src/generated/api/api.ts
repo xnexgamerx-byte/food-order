@@ -139,6 +139,39 @@ export const CreateOrderBody = zod.object({
 });
 
 /**
+ * @summary List all orders for a customer phone number
+ */
+export const GetOrdersByPhoneParams = zod.object({
+  phone: zod.coerce.string(),
+});
+
+export const GetOrdersByPhoneResponseItem = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  customerName: zod.string(),
+  customerPhone: zod.string(),
+  restaurantId: zod.number(),
+  restaurantName: zod.string(),
+  items: zod.array(
+    zod.object({
+      menuItemId: zod.number(),
+      quantity: zod.number(),
+      price: zod.number(),
+      name: zod.string(),
+      nameAr: zod.string(),
+    }),
+  ),
+  address: zod.string(),
+  neighborhood: zod.string().optional(),
+  notes: zod.string().optional(),
+  total: zod.number(),
+  status: zod.string(),
+  whatsappUrl: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetOrdersByPhoneResponse = zod.array(GetOrdersByPhoneResponseItem);
+
+/**
  * @summary Get featured restaurants and popular items
  */
 export const GetFeaturedResponse = zod.object({
