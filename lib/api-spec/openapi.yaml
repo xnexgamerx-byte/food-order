@@ -303,6 +303,14 @@ components:
       properties:
         id:
           type: integer
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        pricePerKm:
+          type: number
         name:
           type: string
         nameAr:
@@ -350,6 +358,8 @@ components:
         - minOrder
         - imageUrl
         - isOpen
+        - pricePerKm
+        - deliveryFee
 
     MenuItem:
       type: object

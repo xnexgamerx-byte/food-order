@@ -11,6 +11,9 @@ export interface HealthStatus {
 
 export interface Restaurant {
   id: number;
+  lat?: number | null;
+  lng?: number | null;
+  pricePerKm: number;
   name: string;
   nameAr: string;
   description?: string;
@@ -23,7 +26,7 @@ export interface Restaurant {
   imageUrl: string;
   isOpen: boolean;
   isFreeDelivery?: boolean;
-  deliveryFee?: number;
+  deliveryFee: number;
   discountPercent?: number;
   deliveryMinutes?: number;
   phone?: string;

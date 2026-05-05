@@ -51,6 +51,13 @@ Tables: `categories`, `restaurants`, `menu_items`, `orders`, `reviews`
 
 `reviews`: one row per order (unique on `order_id`); rating 1-5; `message` required if rating < 3. Submitting a review recomputes `restaurants.rating` as the AVG of its reviews.
 
+## Delivery Fee by Distance
+
+Restaurants have `lat`, `lng` (coordinates), `pricePerKm` (IQD/km), and `deliveryFee` (minimum base).
+At checkout, selecting a neighborhood calculates Haversine distance → fee = max(deliveryFee, distance × pricePerKm) rounded up to nearest 250 IQD.
+Neighborhoods with coordinates: `artifacts/food-order/src/lib/neighborhoods.ts`.
+If `pricePerKm = 0` or restaurant has no coordinates, falls back to fixed `deliveryFee`.
+
 ## WhatsApp Flow
 
 When order is confirmed:

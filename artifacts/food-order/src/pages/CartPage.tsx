@@ -1,17 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { ArrowRight, Trash2, Minus, Plus, MapPin, User, Phone, FileText } from "lucide-react";
+import { ArrowRight, Trash2, Minus, Plus, MapPin, User, Phone, FileText, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCreateOrder } from "@workspace/api-client-react";
+import { useCreateOrder, useGetRestaurant, getGetRestaurantQueryKey } from "@workspace/api-client-react";
 import { useCart } from "@/lib/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { getCustomer, saveCustomer } from "@/lib/customer";
-
-const NEIGHBORHOODS = [
-  "تكريت", "بيجي", "الدور", "سامراء", "الشرقاط", "بلد", "الضلوعية",
-  "العلم", "الدجيل", "المكيشيفة", "طوزخرماتو", "السطة", "العوجة",
-];
+import { NEIGHBORHOODS, calcDeliveryFee } from "@/lib/neighborhoods";
 
 function Field({
   label, id, icon: Icon, placeholder, type = "text", value, onChange, error,
@@ -41,12 +37,11 @@ function Field({
 
 export default function CartPage() {
   const [, setLocation] = useLocation();
-  const { items, restaurantId, restaurantName, deliveryFee, updateQuantity, removeItem, clearCart, subtotal, totalItems } = useCart();
+  const { items, restaurantId, restaurantName, deliveryFee, updateDeliveryFee, updateQuantity, removeItem, clearCart, subtotal, totalItems } = useCart();
   const { toast } = useToast();
   const createOrder = useCreateOrder();
 
   const SERVICE_FEE = 500;
-  const total = subtotal + SERVICE_FEE + deliveryFee;
 
   const [form, setForm] = useState(() => {
     const c = getCustomer();
@@ -59,6 +54,31 @@ export default function CartPage() {
     };
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [distanceInfo, setDistanceInfo] = useState<{ km: number; fee: number } | null>(null);
+
+  // Fetch restaurant to get lat/lng/pricePerKm
+  const { data: restaurant } = useGetRestaurant(restaurantId ?? 0, {
+    query: {
+      queryKey: getGetRestaurantQueryKey(restaurantId ?? 0),
+      enabled: !!restaurantId,
+    },
+  });
+
+  // Recalculate delivery fee whenever neighborhood or restaurant data changes
+  useEffect(() => {
+    if (!restaurant || !form.neighborhood) return;
+    const { fee, distanceKm } = calcDeliveryFee(
+      restaurant.lat,
+      restaurant.lng,
+      restaurant.pricePerKm ?? 0,
+      restaurant.deliveryFee ?? 2000,
+      form.neighborhood,
+    );
+    updateDeliveryFee(fee);
+    setDistanceInfo(distanceKm !== null ? { km: distanceKm, fee } : null);
+  }, [form.neighborhood, restaurant?.id, restaurant?.lat, restaurant?.lng, restaurant?.pricePerKm, restaurant?.deliveryFee]);
+
+  const total = subtotal + SERVICE_FEE + deliveryFee;
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -223,7 +243,10 @@ export default function CartPage() {
           <div className="space-y-3">
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">المنطقة / الحي</label>
-              <Select value={form.neighborhood} onValueChange={(v) => setForm((f) => ({ ...f, neighborhood: v }))}>
+              <Select
+                value={form.neighborhood}
+                onValueChange={(v) => setForm((f) => ({ ...f, neighborhood: v }))}
+              >
                 <SelectTrigger
                   data-testid="select-neighborhood"
                   className={`h-11 rounded-xl border text-sm ${errors.neighborhood ? "border-destructive" : "border-border"} focus:ring-2 focus:ring-primary/30`}
@@ -232,11 +255,22 @@ export default function CartPage() {
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   {NEIGHBORHOODS.map((n) => (
-                    <SelectItem key={n} value={n} className="text-sm">{n}</SelectItem>
+                    <SelectItem key={n.name} value={n.name} className="text-sm">{n.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.neighborhood && <p className="text-destructive text-xs mt-1">{errors.neighborhood}</p>}
+
+              {/* Distance badge */}
+              {distanceInfo && (
+                <div className="mt-2 flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+                  <Navigation className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                  <span className="text-xs text-blue-800 font-semibold">
+                    المسافة من المطعم: <strong>{distanceInfo.km} كم</strong>
+                    {" — "}رسوم التوصيل: <strong>{distanceInfo.fee.toLocaleString()} د.ع</strong>
+                  </span>
+                </div>
+              )}
             </div>
             <Field label="العنوان التفصيلي" id="address" icon={MapPin} placeholder="الشارع، رقم المنزل، معلم قريب..."
               value={form.address} onChange={(v) => setForm((f) => ({ ...f, address: v }))} error={errors.address} />
@@ -274,15 +308,22 @@ export default function CartPage() {
               <span className="text-muted-foreground">المجموع الفرعي</span>
               <span className="font-semibold">{subtotal.toLocaleString()} د.ع</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-start">
               <span className="text-muted-foreground">رسوم التوصيل</span>
-              <span className="font-semibold">
-                {deliveryFee === 0 ? (
-                  <span className="text-emerald-600">مجاني</span>
-                ) : (
-                  `${deliveryFee.toLocaleString()} د.ع`
+              <div className="text-left">
+                <span className="font-semibold block">
+                  {deliveryFee === 0 ? (
+                    <span className="text-emerald-600">مجاني</span>
+                  ) : (
+                    `${deliveryFee.toLocaleString()} د.ع`
+                  )}
+                </span>
+                {distanceInfo && (
+                  <span className="text-[10px] text-muted-foreground block mt-0.5">
+                    {distanceInfo.km} كم من المطعم
+                  </span>
                 )}
-              </span>
+              </div>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">رسوم الخدمة</span>

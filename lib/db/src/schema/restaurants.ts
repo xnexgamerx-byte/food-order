@@ -30,6 +30,9 @@ export const restaurantsTable = pgTable("restaurants", {
   phone: text("phone").notNull().default(""),
   whatsapp: text("whatsapp").notNull().default(""),
   address: text("address").notNull().default(""),
+  lat: real("lat"),
+  lng: real("lng"),
+  pricePerKm: real("price_per_km").notNull().default(0),
 });
 
 export const menuItemsTable = pgTable("menu_items", {

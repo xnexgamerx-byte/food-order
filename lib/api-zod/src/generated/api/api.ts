@@ -28,6 +28,9 @@ export const ListRestaurantsQueryParams = zod.object({
 
 export const ListRestaurantsResponseItem = zod.object({
   id: zod.number(),
+  lat: zod.number().nullish(),
+  lng: zod.number().nullish(),
+  pricePerKm: zod.number(),
   name: zod.string(),
   nameAr: zod.string(),
   description: zod.string().optional(),
@@ -40,7 +43,7 @@ export const ListRestaurantsResponseItem = zod.object({
   imageUrl: zod.string(),
   isOpen: zod.boolean(),
   isFreeDelivery: zod.boolean().optional(),
-  deliveryFee: zod.number().optional(),
+  deliveryFee: zod.number(),
   discountPercent: zod.number().optional(),
   deliveryMinutes: zod.number().optional(),
   phone: zod.string().optional(),
@@ -58,6 +61,9 @@ export const GetRestaurantParams = zod.object({
 
 export const GetRestaurantResponse = zod.object({
   id: zod.number(),
+  lat: zod.number().nullish(),
+  lng: zod.number().nullish(),
+  pricePerKm: zod.number(),
   name: zod.string(),
   nameAr: zod.string(),
   description: zod.string().optional(),
@@ -70,7 +76,7 @@ export const GetRestaurantResponse = zod.object({
   imageUrl: zod.string(),
   isOpen: zod.boolean(),
   isFreeDelivery: zod.boolean().optional(),
-  deliveryFee: zod.number().optional(),
+  deliveryFee: zod.number(),
   discountPercent: zod.number().optional(),
   deliveryMinutes: zod.number().optional(),
   phone: zod.string().optional(),
@@ -180,6 +186,9 @@ export const GetFeaturedResponse = zod.object({
   featuredRestaurants: zod.array(
     zod.object({
       id: zod.number(),
+      lat: zod.number().nullish(),
+      lng: zod.number().nullish(),
+      pricePerKm: zod.number(),
       name: zod.string(),
       nameAr: zod.string(),
       description: zod.string().optional(),
@@ -192,7 +201,7 @@ export const GetFeaturedResponse = zod.object({
       imageUrl: zod.string(),
       isOpen: zod.boolean(),
       isFreeDelivery: zod.boolean().optional(),
-      deliveryFee: zod.number().optional(),
+      deliveryFee: zod.number(),
       discountPercent: zod.number().optional(),
       deliveryMinutes: zod.number().optional(),
       phone: zod.string().optional(),

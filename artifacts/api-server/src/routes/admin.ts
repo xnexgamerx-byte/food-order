@@ -49,7 +49,8 @@ router.get("/admin/restaurants", adminAuth, async (req, res) => {
 router.post("/admin/restaurants", adminAuth, async (req, res) => {
   try {
     const { nameAr, categoryAr, deliveryTime, deliveryMinutes, minOrder, deliveryFee,
-            imageUrl, whatsapp, isOpen, isFreeDelivery, discountPercent } = req.body;
+            imageUrl, whatsapp, isOpen, isFreeDelivery, discountPercent,
+            pricePerKm, lat, lng } = req.body;
     const [created] = await db.insert(restaurantsTable).values({
       nameAr: nameAr || "مطعم جديد",
       name: nameAr || "New Restaurant",
@@ -59,6 +60,9 @@ router.post("/admin/restaurants", adminAuth, async (req, res) => {
       deliveryMinutes: Number(deliveryMinutes) || 30,
       minOrder: Number(minOrder) || 5000,
       deliveryFee: deliveryFee !== undefined ? Number(deliveryFee) : 2000,
+      pricePerKm: pricePerKm !== undefined ? Number(pricePerKm) : 0,
+      lat: lat !== undefined && lat !== "" && lat !== null ? Number(lat) : null,
+      lng: lng !== undefined && lng !== "" && lng !== null ? Number(lng) : null,
       imageUrl: imageUrl || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80",
       whatsapp: whatsapp || "",
       rating: 4.0,
@@ -89,7 +93,8 @@ router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { nameAr, categoryAr, rating, deliveryTime, deliveryMinutes, minOrder, deliveryFee,
-            isOpen, isFreeDelivery, discountPercent, imageUrl, whatsapp } = req.body;
+            isOpen, isFreeDelivery, discountPercent, imageUrl, whatsapp,
+            pricePerKm, lat, lng } = req.body;
 
     const [updated] = await db
       .update(restaurantsTable)
@@ -101,6 +106,9 @@ router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
         ...(deliveryMinutes !== undefined && { deliveryMinutes: Number(deliveryMinutes) }),
         ...(minOrder !== undefined && { minOrder: Number(minOrder) }),
         ...(deliveryFee !== undefined && { deliveryFee: Number(deliveryFee) }),
+        ...(pricePerKm !== undefined && { pricePerKm: Number(pricePerKm) }),
+        ...(lat !== undefined && { lat: lat === "" || lat === null ? null : Number(lat) }),
+        ...(lng !== undefined && { lng: lng === "" || lng === null ? null : Number(lng) }),
         ...(isOpen !== undefined && { isOpen: Boolean(isOpen) }),
         ...(isFreeDelivery !== undefined && { isFreeDelivery: Boolean(isFreeDelivery) }),
         ...(discountPercent !== undefined && { discountPercent: Number(discountPercent) }),

@@ -8,7 +8,8 @@ import AdminLayout from "./AdminLayout";
 interface Restaurant {
   id: number; nameAr: string; categoryAr: string; rating: number;
   deliveryTime: string; deliveryMinutes: number; minOrder: number;
-  deliveryFee: number;
+  deliveryFee: number; pricePerKm: number;
+  lat: number | null; lng: number | null;
   imageUrl: string; isOpen: boolean; isFreeDelivery: boolean;
   discountPercent: number; whatsapp: string;
 }
@@ -18,6 +19,7 @@ type EditField = { id: number; field: string; value: string };
 const EMPTY_REST = {
   nameAr: "", categoryAr: "", deliveryTime: "20-35 د",
   deliveryMinutes: "30", minOrder: "5000", deliveryFee: "2000",
+  pricePerKm: "0", lat: "", lng: "",
   imageUrl: "", whatsapp: "", discountPercent: "0",
 };
 
@@ -92,6 +94,9 @@ export default function AdminRestaurants() {
           minOrder: Number(newRest.minOrder),
           deliveryFee: Number(newRest.deliveryFee),
           discountPercent: Number(newRest.discountPercent),
+          pricePerKm: Number(newRest.pricePerKm) || 0,
+          lat: newRest.lat ? Number(newRest.lat) : null,
+          lng: newRest.lng ? Number(newRest.lng) : null,
         }),
       });
       setRestaurants((prev) => [...prev, created]);
@@ -176,6 +181,14 @@ export default function AdminRestaurants() {
               <Field label="كلفة التوصيل (د.ع)" value={newRest.deliveryFee} onChange={(v) => setNewRest((p) => ({ ...p, deliveryFee: v }))} type="number" />
               <Field label="الخصم %" value={newRest.discountPercent} onChange={(v) => setNewRest((p) => ({ ...p, discountPercent: v }))} type="number" />
             </div>
+            <Field label="سعر الكيلومتر (د.ع/كم) — 0 يعني سعر ثابت" value={newRest.pricePerKm} onChange={(v) => setNewRest((p) => ({ ...p, pricePerKm: v }))} type="number" />
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="خط العرض (Lat)" value={newRest.lat} onChange={(v) => setNewRest((p) => ({ ...p, lat: v }))} type="number" />
+              <Field label="خط الطول (Lng)" value={newRest.lng} onChange={(v) => setNewRest((p) => ({ ...p, lng: v }))} type="number" />
+            </div>
+            <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary flex items-center gap-1">
+              🗺️ افتح خرائط جوجل → كليك يمين على الموقع → انسخ الإحداثيات
+            </a>
             <Field label="واتساب" value={newRest.whatsapp} onChange={(v) => setNewRest((p) => ({ ...p, whatsapp: v }))} />
             <ImageUpload label="صورة المطعم" value={newRest.imageUrl} onChange={(v) => setNewRest((p) => ({ ...p, imageUrl: v }))} />
             {addError && (
@@ -229,7 +242,10 @@ export default function AdminRestaurants() {
                 {renderEditableCell(r, "categoryAr", "التصنيف")}
                 {renderEditableCell(r, "discountPercent", "الخصم %", "number")}
                 {renderEditableCell(r, "minOrder", "الحد الأدنى (د.ع)", "number")}
-                {renderEditableCell(r, "deliveryFee", "كلفة التوصيل (د.ع)", "number")}
+                {renderEditableCell(r, "deliveryFee", "كلفة توصيل الحد الأدنى (د.ع)", "number")}
+                {renderEditableCell(r, "pricePerKm", "سعر الكيلومتر (د.ع/كم) — 0 يعني ثابت", "number")}
+                {renderEditableCell(r, "lat", "خط العرض Lat", "number")}
+                {renderEditableCell(r, "lng", "خط الطول Lng", "number")}
                 {renderEditableCell(r, "deliveryTime", "وقت التوصيل")}
                 {renderEditableCell(r, "whatsapp", "واتساب", "tel")}
 
