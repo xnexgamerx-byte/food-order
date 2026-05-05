@@ -46,6 +46,7 @@ export default function AdminRestaurants() {
   const [saving, setSaving] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [newRest, setNewRest] = useState(EMPTY_REST);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const load = () => {
     if (!token) return;
@@ -81,6 +82,7 @@ export default function AdminRestaurants() {
   const addRestaurant = async () => {
     if (!token || !newRest.nameAr) return;
     setSaving(true);
+    setAddError(null);
     try {
       const created = await adminFetch(token, "/api/admin/restaurants", {
         method: "POST",
@@ -95,6 +97,9 @@ export default function AdminRestaurants() {
       setRestaurants((prev) => [...prev, created]);
       setNewRest(EMPTY_REST);
       setShowAdd(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "تعذر حفظ المطعم";
+      setAddError(msg);
     } finally { setSaving(false); }
   };
 
@@ -173,6 +178,11 @@ export default function AdminRestaurants() {
             </div>
             <Field label="واتساب" value={newRest.whatsapp} onChange={(v) => setNewRest((p) => ({ ...p, whatsapp: v }))} />
             <ImageUpload label="صورة المطعم" value={newRest.imageUrl} onChange={(v) => setNewRest((p) => ({ ...p, imageUrl: v }))} />
+            {addError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg">
+                ⚠️ {addError}
+              </div>
+            )}
             <div className="flex gap-2 pt-1">
               <button onClick={addRestaurant} disabled={saving || !newRest.nameAr}
                 className="flex-1 h-10 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-60">
