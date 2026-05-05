@@ -19,7 +19,7 @@ type EditField = { id: number; field: string; value: string };
 const EMPTY_REST = {
   nameAr: "", categoryAr: "", deliveryTime: "20-35 د",
   deliveryMinutes: "30", minOrder: "5000", deliveryFee: "2000",
-  pricePerKm: "0", lat: "", lng: "",
+  pricePerKm: "0", lat: "", lng: "", locationRaw: "",
   imageUrl: "", whatsapp: "", discountPercent: "0",
 };
 
