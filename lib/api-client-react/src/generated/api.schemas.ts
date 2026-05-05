@@ -89,6 +89,31 @@ export interface Order {
   createdAt: string;
 }
 
+export interface Review {
+  id: number;
+  orderId: number;
+  restaurantId: number;
+  customerPhone: string;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  rating: number;
+  message: string;
+  createdAt: string;
+}
+
+export interface CreateReviewBody {
+  orderId: number;
+  customerPhone: string;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  rating: number;
+  message?: string;
+}
+
 export interface FeaturedContent {
   featuredRestaurants: Restaurant[];
   popularItems: MenuItem[];

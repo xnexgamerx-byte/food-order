@@ -47,7 +47,9 @@ A professional Arabic food ordering platform for Salah al-Din, Iraq — modeled 
 
 ## Database Schema
 
-Tables: `categories`, `restaurants`, `menu_items`, `orders`
+Tables: `categories`, `restaurants`, `menu_items`, `orders`, `reviews`
+
+`reviews`: one row per order (unique on `order_id`); rating 1-5; `message` required if rating < 3. Submitting a review recomputes `restaurants.rating` as the AVG of its reviews.
 
 ## WhatsApp Flow
 

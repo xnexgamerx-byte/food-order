@@ -216,3 +216,59 @@ export const GetFeaturedResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Submit a review for a delivered order
+ */
+export const createReviewBodyRatingMax = 5;
+
+export const CreateReviewBody = zod.object({
+  orderId: zod.number(),
+  customerPhone: zod.string(),
+  rating: zod.number().min(1).max(createReviewBodyRatingMax),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary Get review for a specific order (returns null if not reviewed)
+ */
+export const GetReviewByOrderParams = zod.object({
+  orderId: zod.coerce.number(),
+});
+
+export const getReviewByOrderResponseOneRatingMax = 5;
+
+export const GetReviewByOrderResponse = zod.union([
+  zod.object({
+    id: zod.number(),
+    orderId: zod.number(),
+    restaurantId: zod.number(),
+    customerPhone: zod.string(),
+    rating: zod.number().min(1).max(getReviewByOrderResponseOneRatingMax),
+    message: zod.string(),
+    createdAt: zod.string(),
+  }),
+  zod.null(),
+]);
+
+/**
+ * @summary List reviews for a restaurant
+ */
+export const GetRestaurantReviewsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const getRestaurantReviewsResponseRatingMax = 5;
+
+export const GetRestaurantReviewsResponseItem = zod.object({
+  id: zod.number(),
+  orderId: zod.number(),
+  restaurantId: zod.number(),
+  customerPhone: zod.string(),
+  rating: zod.number().min(1).max(getRestaurantReviewsResponseRatingMax),
+  message: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetRestaurantReviewsResponse = zod.array(
+  GetRestaurantReviewsResponseItem,
+);

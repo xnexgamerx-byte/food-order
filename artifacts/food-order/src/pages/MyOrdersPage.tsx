@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowRight, Package, MessageCircle, Phone, ShoppingBag, Clock, CheckCircle2, XCircle } from "lucide-react";
-import { useGetOrdersByPhone } from "@workspace/api-client-react";
+import { ArrowRight, Package, MessageCircle, Phone, ShoppingBag, Clock, CheckCircle2, XCircle, Star } from "lucide-react";
+import { useGetOrdersByPhone, useGetReviewByOrder } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { getCustomer, saveCustomer } from "@/lib/customer";
+import { RatingModal } from "@/components/RatingModal";
 
 interface OrderItem {
   menuItemId: number;
@@ -138,7 +139,7 @@ export default function MyOrdersPage() {
               طلبات حالية ({pending.length})
             </h2>
             <div className="space-y-3">
-              {pending.map((o) => <OrderCard key={o.id} order={o} />)}
+              {pending.map((o) => <OrderCard key={o.id} order={o} customerPhone={activePhone} />)}
             </div>
           </section>
         )}
@@ -150,7 +151,7 @@ export default function MyOrdersPage() {
               طلبات سابقة ({past.length})
             </h2>
             <div className="space-y-3">
-              {past.map((o) => <OrderCard key={o.id} order={o} />)}
+              {past.map((o) => <OrderCard key={o.id} order={o} customerPhone={activePhone} />)}
             </div>
           </section>
         )}
@@ -159,11 +160,21 @@ export default function MyOrdersPage() {
   );
 }
 
-function OrderCard({ order }: { order: any }) {
+function OrderCard({ order, customerPhone }: { order: any; customerPhone: string }) {
   const status = STATUS_LABEL[order.status] || STATUS_LABEL.pending!;
   const StatusIcon = status.icon;
   const items: OrderItem[] = Array.isArray(order.items) ? order.items : [];
   const created = order.createdAt ? new Date(order.createdAt) : null;
+  const isDelivered = order.status === "delivered";
+  const [showRating, setShowRating] = useState(false);
+
+  const { data: review, refetch: refetchReview } = useGetReviewByOrder(order.id, {
+    query: {
+      queryKey: ["review-by-order", order.id],
+      enabled: isDelivered,
+      refetchOnWindowFocus: false,
+    },
+  });
 
   return (
     <div className="bg-white rounded-2xl border border-border shadow-xs overflow-hidden" data-testid={`order-card-${order.id}`}>
@@ -216,7 +227,47 @@ function OrderCard({ order }: { order: any }) {
             إعادة إرسال للواتساب
           </a>
         )}
+
+        {isDelivered && review && (
+          <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-bold text-amber-800">تقييمك</span>
+              <div className="flex gap-0.5" dir="ltr">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star
+                    key={n}
+                    className={`h-3.5 w-3.5 ${n <= review.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
+                  />
+                ))}
+              </div>
+            </div>
+            {review.message && (
+              <p className="text-xs text-amber-900/80 leading-relaxed mt-1">{review.message}</p>
+            )}
+          </div>
+        )}
+
+        {isDelivered && !review && (
+          <button
+            onClick={() => setShowRating(true)}
+            className="mt-2 w-full flex items-center justify-center gap-2 h-10 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold"
+            data-testid={`button-rate-${order.id}`}
+          >
+            <Star className="h-4 w-4 fill-white" />
+            قيّم تجربتك
+          </button>
+        )}
       </div>
+
+      {showRating && (
+        <RatingModal
+          orderId={order.id}
+          customerPhone={customerPhone}
+          restaurantName={order.restaurantName}
+          onClose={() => setShowRating(false)}
+          onSubmitted={() => { setShowRating(false); refetchReview(); }}
+        />
+      )}
     </div>
   );
 }
