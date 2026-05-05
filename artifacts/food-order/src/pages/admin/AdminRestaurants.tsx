@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, Edit2, Check, X, ToggleLeft, ToggleRight, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, Edit2, Check, X, ToggleLeft, ToggleRight, Plus, Trash2, MapPin } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAdmin, adminFetch } from "@/lib/admin-context";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -19,12 +19,30 @@ type EditField = { id: number; field: string; value: string };
 const EMPTY_REST = {
   nameAr: "", categoryAr: "", deliveryTime: "20-35 د",
   deliveryMinutes: "30", minOrder: "5000", deliveryFee: "2000",
-  pricePerKm: "0", lat: "", lng: "", locationRaw: "",
+  pricePerKm: "0", lat: "", lng: "", mapsUrl: "",
   imageUrl: "", whatsapp: "", discountPercent: "0",
 };
 
-function Field({ label, value, onChange, type = "text" }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string;
+function parseGoogleMapsUrl(url: string): { lat: number; lng: number } | null {
+  if (!url) return null;
+  const patterns = [
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /\/place\/[^/]+\/@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /maps\.google\.[^/]+\/\?.*q=(-?\d+\.\d+)%2C(-?\d+\.\d+)/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+  }
+  const coordOnly = url.trim().match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
+  if (coordOnly) return { lat: parseFloat(coordOnly[1]), lng: parseFloat(coordOnly[2]) };
+  return null;
+}
+
+function Field({ label, value, onChange, type = "text", placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string;
 }) {
   return (
     <div>
@@ -32,9 +50,175 @@ function Field({ label, value, onChange, type = "text" }: {
       <input
         type={type}
         value={value}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full h-9 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right"
       />
+    </div>
+  );
+}
+
+function MapsUrlField({
+  lat, lng, onParsed,
+}: {
+  lat: string; lng: string;
+  onParsed: (lat: string, lng: string) => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+
+  const handleChange = (v: string) => {
+    setUrl(v);
+    if (!v) { setStatus("idle"); onParsed("", ""); return; }
+    const parsed = parseGoogleMapsUrl(v);
+    if (parsed) {
+      setStatus("ok");
+      onParsed(String(parsed.lat), String(parsed.lng));
+    } else {
+      setStatus("error");
+      onParsed("", "");
+    }
+  };
+
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground mb-1 block">موقع المطعم (رابط خرائط جوجل)</label>
+      <div className="relative">
+        <input
+          type="url"
+          value={url}
+          placeholder="الصق رابط خرائط جوجل هنا..."
+          onChange={(e) => handleChange(e.target.value)}
+          className={`w-full h-9 pr-3 pl-8 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right transition-colors ${
+            status === "ok" ? "border-emerald-400 bg-emerald-50" :
+            status === "error" ? "border-red-400 bg-red-50" :
+            "border-border"
+          }`}
+        />
+        <MapPin className={`absolute left-2.5 top-2.5 h-4 w-4 ${
+          status === "ok" ? "text-emerald-500" :
+          status === "error" ? "text-red-400" :
+          "text-muted-foreground"
+        }`} />
+      </div>
+      {status === "ok" && lat && lng && (
+        <p className="text-[11px] text-emerald-600 mt-1 font-medium">
+          ✓ تم استخراج الموقع: {parseFloat(lat).toFixed(4)}, {parseFloat(lng).toFixed(4)}
+        </p>
+      )}
+      {status === "error" && (
+        <p className="text-[11px] text-red-500 mt-1">
+          تعذّر قراءة الإحداثيات — تأكد أن الرابط من خرائط جوجل
+        </p>
+      )}
+      <p className="text-[10px] text-muted-foreground mt-1">
+        كيف تحصل على الرابط: افتح خرائط جوجل ← ابحث عن موقع المطعم ← انسخ الرابط من شريط العنوان
+      </p>
+    </div>
+  );
+}
+
+function MapsUrlEditField({
+  restaurantId, lat, lng,
+  onSaved,
+}: {
+  restaurantId: number;
+  lat: number | null; lng: number | null;
+  onSaved: (lat: number | null, lng: number | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState("");
+  const [parsed, setParsed] = useState<{ lat: number; lng: number } | null>(null);
+  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+
+  const handleChange = (v: string) => {
+    setUrl(v);
+    if (!v) { setStatus("idle"); setParsed(null); return; }
+    const res = parseGoogleMapsUrl(v);
+    if (res) { setStatus("ok"); setParsed(res); }
+    else { setStatus("error"); setParsed(null); }
+  };
+
+  const handleSave = () => {
+    if (!parsed) return;
+    onSaved(parsed.lat, parsed.lng);
+    setOpen(false);
+    setUrl("");
+    setParsed(null);
+    setStatus("idle");
+  };
+
+  const hasLocation = lat !== null && lng !== null;
+
+  return (
+    <div className="py-2 border-b border-border">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">موقع المطعم</span>
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-1.5 text-sm font-semibold hover:text-primary transition-colors group"
+        >
+          {hasLocation ? (
+            <span className="text-emerald-600 text-xs font-bold flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              محدد ✓
+            </span>
+          ) : (
+            <span className="text-muted-foreground text-xs flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              غير محدد
+            </span>
+          )}
+          <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-2 space-y-2">
+          <div className="relative">
+            <input
+              type="url"
+              value={url}
+              placeholder="الصق رابط خرائط جوجل..."
+              autoFocus
+              onChange={(e) => handleChange(e.target.value)}
+              className={`w-full h-9 pr-3 pl-8 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right transition-colors ${
+                status === "ok" ? "border-emerald-400 bg-emerald-50" :
+                status === "error" ? "border-red-400 bg-red-50" :
+                "border-border"
+              }`}
+            />
+            <MapPin className={`absolute left-2.5 top-2.5 h-4 w-4 ${
+              status === "ok" ? "text-emerald-500" :
+              status === "error" ? "text-red-400" :
+              "text-muted-foreground"
+            }`} />
+          </div>
+          {status === "ok" && parsed && (
+            <p className="text-[11px] text-emerald-600 font-medium">
+              ✓ {parsed.lat.toFixed(4)}, {parsed.lng.toFixed(4)}
+            </p>
+          )}
+          {status === "error" && (
+            <p className="text-[11px] text-red-500">تعذّر قراءة الرابط</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              disabled={!parsed}
+              className="flex-1 h-8 bg-emerald-500 text-white rounded-lg text-xs font-bold disabled:opacity-40"
+            >
+              حفظ الموقع
+            </button>
+            <button
+              onClick={() => { setOpen(false); setUrl(""); setParsed(null); setStatus("idle"); }}
+              className="flex-1 h-8 bg-muted rounded-lg text-xs font-semibold"
+            >
+              إلغاء
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -71,6 +255,14 @@ export default function AdminRestaurants() {
       setSaving(false);
       setEditing(null);
     }
+  };
+
+  const saveLocation = async (id: number, lat: number | null, lng: number | null) => {
+    if (!token) return;
+    const updated = await adminFetch(token, `/api/admin/restaurants/${id}`, {
+      method: "PUT", body: JSON.stringify({ lat, lng }),
+    });
+    setRestaurants((prev) => prev.map((r) => r.id === id ? { ...r, ...updated } : r));
   };
 
   const toggle = (r: Restaurant, field: "isOpen" | "isFreeDelivery") => save(r.id, field, !r[field]);
@@ -110,7 +302,7 @@ export default function AdminRestaurants() {
 
   const renderEditableCell = (r: Restaurant, field: keyof Restaurant, label: string, type = "text") => {
     const isEditing = editing?.id === r.id && editing?.field === field;
-    const val = String(r[field]);
+    const val = String(r[field] ?? "");
     return (
       <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
         <span className="text-xs text-muted-foreground">{label}</span>
@@ -142,7 +334,7 @@ export default function AdminRestaurants() {
             onClick={() => setEditing({ id: r.id, field, value: val })}
             className="flex items-center gap-1.5 text-sm font-semibold hover:text-primary transition-colors group"
           >
-            {val}
+            {val || <span className="text-muted-foreground text-xs">—</span>}
             <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
         )}
@@ -158,7 +350,6 @@ export default function AdminRestaurants() {
           <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg">{restaurants.length} مطعم</span>
         </div>
 
-        {/* Add Restaurant Button */}
         <button
           onClick={() => setShowAdd(!showAdd)}
           className="w-full h-11 border-2 border-dashed border-primary/40 text-primary rounded-2xl flex items-center justify-center gap-2 text-sm font-bold hover:border-primary hover:bg-primary/5 transition-all"
@@ -166,7 +357,6 @@ export default function AdminRestaurants() {
           <Plus className="h-4 w-4" /> إضافة مطعم جديد
         </button>
 
-        {/* Add Restaurant Form */}
         {showAdd && (
           <div className="bg-white rounded-2xl border border-border shadow-xs p-4 space-y-3">
             <h2 className="font-bold text-sm">مطعم جديد</h2>
@@ -181,14 +371,18 @@ export default function AdminRestaurants() {
               <Field label="كلفة التوصيل (د.ع)" value={newRest.deliveryFee} onChange={(v) => setNewRest((p) => ({ ...p, deliveryFee: v }))} type="number" />
               <Field label="الخصم %" value={newRest.discountPercent} onChange={(v) => setNewRest((p) => ({ ...p, discountPercent: v }))} type="number" />
             </div>
-            <Field label="سعر الكيلومتر (د.ع/كم) — 0 يعني سعر ثابت" value={newRest.pricePerKm} onChange={(v) => setNewRest((p) => ({ ...p, pricePerKm: v }))} type="number" />
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="خط العرض (Lat)" value={newRest.lat} onChange={(v) => setNewRest((p) => ({ ...p, lat: v }))} type="number" />
-              <Field label="خط الطول (Lng)" value={newRest.lng} onChange={(v) => setNewRest((p) => ({ ...p, lng: v }))} type="number" />
-            </div>
-            <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary flex items-center gap-1">
-              🗺️ افتح خرائط جوجل → كليك يمين على الموقع → انسخ الإحداثيات
-            </a>
+            <Field
+              label="سعر الكيلومتر (د.ع/كم) — 0 يعني سعر توصيل ثابت"
+              value={newRest.pricePerKm}
+              onChange={(v) => setNewRest((p) => ({ ...p, pricePerKm: v }))}
+              type="number"
+              placeholder="مثال: 300"
+            />
+            <MapsUrlField
+              lat={newRest.lat}
+              lng={newRest.lng}
+              onParsed={(lat, lng) => setNewRest((p) => ({ ...p, lat, lng }))}
+            />
             <Field label="واتساب" value={newRest.whatsapp} onChange={(v) => setNewRest((p) => ({ ...p, whatsapp: v }))} />
             <ImageUpload label="صورة المطعم" value={newRest.imageUrl} onChange={(v) => setNewRest((p) => ({ ...p, imageUrl: v }))} />
             {addError && (
@@ -207,12 +401,10 @@ export default function AdminRestaurants() {
           </div>
         )}
 
-        {/* Restaurants List */}
         {loading
           ? Array(3).fill(0).map((_, i) => <div key={i} className="bg-white rounded-2xl h-48 border border-border animate-pulse" />)
           : restaurants.map((r) => (
             <div key={r.id} className="bg-white rounded-2xl border border-border shadow-xs overflow-hidden">
-              {/* Header */}
               <div className="relative h-24">
                 <img src={r.imageUrl || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80"}
                   alt={r.nameAr} className="w-full h-full object-cover" />
@@ -236,20 +428,23 @@ export default function AdminRestaurants() {
                 </div>
               </div>
 
-              {/* Fields */}
               <div className="px-4 py-2">
                 {renderEditableCell(r, "nameAr", "اسم المطعم")}
                 {renderEditableCell(r, "categoryAr", "التصنيف")}
                 {renderEditableCell(r, "discountPercent", "الخصم %", "number")}
                 {renderEditableCell(r, "minOrder", "الحد الأدنى (د.ع)", "number")}
                 {renderEditableCell(r, "deliveryFee", "كلفة توصيل الحد الأدنى (د.ع)", "number")}
-                {renderEditableCell(r, "pricePerKm", "سعر الكيلومتر (د.ع/كم) — 0 يعني ثابت", "number")}
-                {renderEditableCell(r, "lat", "خط العرض Lat", "number")}
-                {renderEditableCell(r, "lng", "خط الطول Lng", "number")}
+                {renderEditableCell(r, "pricePerKm", "سعر الكيلومتر (د.ع/كم)", "number")}
                 {renderEditableCell(r, "deliveryTime", "وقت التوصيل")}
                 {renderEditableCell(r, "whatsapp", "واتساب", "tel")}
 
-                {/* Image upload */}
+                <MapsUrlEditField
+                  restaurantId={r.id}
+                  lat={r.lat}
+                  lng={r.lng}
+                  onSaved={(lat, lng) => saveLocation(r.id, lat, lng)}
+                />
+
                 <div className="py-3 border-b border-border">
                   <ImageUpload
                     label="صورة المطعم"
@@ -258,7 +453,6 @@ export default function AdminRestaurants() {
                   />
                 </div>
 
-                {/* Toggles */}
                 <div className="flex gap-3 pt-3 pb-1">
                   <button
                     onClick={() => toggle(r, "isOpen")}
