@@ -8,6 +8,7 @@ import AdminLayout from "./AdminLayout";
 interface Restaurant {
   id: number; nameAr: string; categoryAr: string; rating: number;
   deliveryTime: string; deliveryMinutes: number; minOrder: number;
+  deliveryFee: number;
   imageUrl: string; isOpen: boolean; isFreeDelivery: boolean;
   discountPercent: number; whatsapp: string;
 }
@@ -16,7 +17,7 @@ type EditField = { id: number; field: string; value: string };
 
 const EMPTY_REST = {
   nameAr: "", categoryAr: "", deliveryTime: "20-35 د",
-  deliveryMinutes: "30", minOrder: "5000",
+  deliveryMinutes: "30", minOrder: "5000", deliveryFee: "2000",
   imageUrl: "", whatsapp: "", discountPercent: "0",
 };
 
@@ -87,6 +88,7 @@ export default function AdminRestaurants() {
           ...newRest,
           deliveryMinutes: Number(newRest.deliveryMinutes),
           minOrder: Number(newRest.minOrder),
+          deliveryFee: Number(newRest.deliveryFee),
           discountPercent: Number(newRest.discountPercent),
         }),
       });
@@ -166,9 +168,10 @@ export default function AdminRestaurants() {
               <Field label="الحد الأدنى (د.ع)" value={newRest.minOrder} onChange={(v) => setNewRest((p) => ({ ...p, minOrder: v }))} type="number" />
             </div>
             <div className="grid grid-cols-2 gap-3">
+              <Field label="كلفة التوصيل (د.ع)" value={newRest.deliveryFee} onChange={(v) => setNewRest((p) => ({ ...p, deliveryFee: v }))} type="number" />
               <Field label="الخصم %" value={newRest.discountPercent} onChange={(v) => setNewRest((p) => ({ ...p, discountPercent: v }))} type="number" />
-              <Field label="واتساب" value={newRest.whatsapp} onChange={(v) => setNewRest((p) => ({ ...p, whatsapp: v }))} />
             </div>
+            <Field label="واتساب" value={newRest.whatsapp} onChange={(v) => setNewRest((p) => ({ ...p, whatsapp: v }))} />
             <ImageUpload label="صورة المطعم" value={newRest.imageUrl} onChange={(v) => setNewRest((p) => ({ ...p, imageUrl: v }))} />
             <div className="flex gap-2 pt-1">
               <button onClick={addRestaurant} disabled={saving || !newRest.nameAr}
@@ -216,6 +219,7 @@ export default function AdminRestaurants() {
                 {renderEditableCell(r, "categoryAr", "التصنيف")}
                 {renderEditableCell(r, "discountPercent", "الخصم %", "number")}
                 {renderEditableCell(r, "minOrder", "الحد الأدنى (د.ع)", "number")}
+                {renderEditableCell(r, "deliveryFee", "كلفة التوصيل (د.ع)", "number")}
                 {renderEditableCell(r, "deliveryTime", "وقت التوصيل")}
                 {renderEditableCell(r, "whatsapp", "واتساب", "tel")}
 

@@ -44,7 +44,7 @@ export default function RestaurantPage() {
       nameAr: item.nameAr,
       imageUrl: item.imageUrl,
     };
-    const fee = restaurant?.isFreeDelivery ? 0 : 2000;
+    const fee = restaurant?.isFreeDelivery ? 0 : (restaurant?.deliveryFee ?? 2000);
     addItem(cartItem, id, restaurant?.nameAr || "", fee);
   };
 

@@ -24,6 +24,7 @@ export const restaurantsTable = pgTable("restaurants", {
   imageUrl: text("image_url").notNull(),
   isOpen: boolean("is_open").notNull().default(true),
   isFreeDelivery: boolean("is_free_delivery").notNull().default(false),
+  deliveryFee: real("delivery_fee").notNull().default(2000),
   discountPercent: integer("discount_percent").notNull().default(0),
   deliveryMinutes: integer("delivery_minutes").notNull().default(30),
   phone: text("phone").notNull().default(""),

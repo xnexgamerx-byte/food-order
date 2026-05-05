@@ -224,6 +224,8 @@ components:
           type: boolean
         isFreeDelivery:
           type: boolean
+        deliveryFee:
+          type: number
         discountPercent:
           type: integer
         deliveryMinutes:

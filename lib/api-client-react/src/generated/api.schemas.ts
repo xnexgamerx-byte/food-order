@@ -23,6 +23,7 @@ export interface Restaurant {
   imageUrl: string;
   isOpen: boolean;
   isFreeDelivery?: boolean;
+  deliveryFee?: number;
   discountPercent?: number;
   deliveryMinutes?: number;
   phone?: string;
