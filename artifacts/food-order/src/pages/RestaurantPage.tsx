@@ -5,8 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   useGetRestaurant,
   useGetRestaurantMenu,
+  useGetRestaurantReviews,
   getGetRestaurantQueryKey,
   getGetRestaurantMenuQueryKey,
+  getGetRestaurantReviewsQueryKey,
 } from "@workspace/api-client-react";
 import { useCart } from "@/lib/cart-context";
 import type { CartItem } from "@/lib/cart-context";
@@ -187,6 +189,9 @@ export default function RestaurantPage() {
             })}
       </div>
 
+      {/* Reviews */}
+      <ReviewsSection restaurantId={id} />
+
       {/* Floating Cart */}
       {totalItems > 0 && (
         <div className="fixed bottom-5 right-4 left-4 z-50">
@@ -205,6 +210,89 @@ export default function RestaurantPage() {
             </div>
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+function ReviewsSection({ restaurantId }: { restaurantId: number }) {
+  const [showAll, setShowAll] = useState(false);
+  const { data: reviews = [], isLoading } = useGetRestaurantReviews(restaurantId, {
+    query: {
+      queryKey: getGetRestaurantReviewsQueryKey(restaurantId),
+      enabled: !!restaurantId,
+    },
+  });
+
+  if (isLoading || reviews.length === 0) return null;
+
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+  const visible = showAll ? reviews : reviews.slice(0, 3);
+
+  return (
+    <div className="px-4 mt-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-black text-base flex items-center gap-2">
+          <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+          آراء العملاء
+        </h2>
+        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+          <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+          <span className="font-black text-sm text-amber-700">{avg.toFixed(1)}</span>
+          <span className="text-[11px] text-amber-700/70">({reviews.length})</span>
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        {visible.map((r) => {
+          const phone = r.customerPhone || "";
+          const masked = phone.length >= 4 ? `${phone.slice(0, 4)}****${phone.slice(-2)}` : "عميل";
+          const date = new Date(r.createdAt);
+          return (
+            <div
+              key={r.id}
+              className="bg-white border border-border rounded-2xl p-3 shadow-xs"
+              data-testid={`public-review-${r.id}`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center text-xs font-black text-primary">
+                    {phone.slice(-2) || "؟"}
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold" dir="ltr">{masked}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {date.toLocaleDateString("ar-IQ", { dateStyle: "medium" })}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-0.5" dir="ltr">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star
+                      key={n}
+                      className={`h-3 w-3 ${n <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
+                    />
+                  ))}
+                </div>
+              </div>
+              {r.message && (
+                <p className="text-xs text-foreground/80 leading-relaxed mt-1.5">
+                  {r.message}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {reviews.length > 3 && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-3 w-full text-xs font-bold text-primary hover:bg-primary/5 py-2.5 rounded-xl border border-primary/30"
+          data-testid="button-toggle-reviews"
+        >
+          {showAll ? "عرض أقل" : `عرض كل التقييمات (${reviews.length})`}
+        </button>
       )}
     </div>
   );

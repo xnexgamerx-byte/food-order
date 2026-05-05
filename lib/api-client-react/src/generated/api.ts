@@ -17,9 +17,11 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AdminReview,
   Category,
   CreateOrderBody,
   CreateReviewBody,
+  DeleteAdminReview200,
   FeaturedContent,
   GetRestaurantMenuParams,
   HealthStatus,
@@ -901,6 +903,165 @@ export function useGetReviewByOrder<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List all reviews (admin)
+ */
+export const getListAdminReviewsUrl = () => {
+  return `/api/admin/reviews`;
+};
+
+export const listAdminReviews = async (
+  options?: RequestInit,
+): Promise<AdminReview[]> => {
+  return customFetch<AdminReview[]>(getListAdminReviewsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAdminReviewsQueryKey = () => {
+  return [`/api/admin/reviews`] as const;
+};
+
+export const getListAdminReviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAdminReviews>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminReviews>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAdminReviewsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAdminReviews>>
+  > = ({ signal }) => listAdminReviews({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminReviews>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAdminReviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAdminReviews>>
+>;
+export type ListAdminReviewsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all reviews (admin)
+ */
+
+export function useListAdminReviews<
+  TData = Awaited<ReturnType<typeof listAdminReviews>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminReviews>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAdminReviewsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Delete a review (admin)
+ */
+export const getDeleteAdminReviewUrl = (id: number) => {
+  return `/api/admin/reviews/${id}`;
+};
+
+export const deleteAdminReview = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeleteAdminReview200> => {
+  return customFetch<DeleteAdminReview200>(getDeleteAdminReviewUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAdminReviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAdminReview>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAdminReview>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteAdminReview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAdminReview>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAdminReview(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAdminReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAdminReview>>
+>;
+
+export type DeleteAdminReviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a review (admin)
+ */
+export const useDeleteAdminReview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAdminReview>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAdminReview>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteAdminReviewMutationOptions(options));
+};
 
 /**
  * @summary List reviews for a restaurant

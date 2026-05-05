@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { LayoutDashboard, Store, ShoppingBag, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Store, ShoppingBag, Star, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useAdmin } from "@/lib/admin-context";
 
@@ -7,6 +7,7 @@ const NAV = [
   { href: "/admin/dashboard", icon: LayoutDashboard, label: "الرئيسية" },
   { href: "/admin/restaurants", icon: Store, label: "المطاعم والقوائم" },
   { href: "/admin/orders", icon: ShoppingBag, label: "الطلبات" },
+  { href: "/admin/reviews", icon: Star, label: "التقييمات" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

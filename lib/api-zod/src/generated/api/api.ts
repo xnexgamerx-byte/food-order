@@ -252,6 +252,34 @@ export const GetReviewByOrderResponse = zod.union([
 ]);
 
 /**
+ * @summary List all reviews (admin)
+ */
+export const ListAdminReviewsResponseItem = zod.object({
+  id: zod.number(),
+  orderId: zod.number(),
+  restaurantId: zod.number(),
+  customerPhone: zod.string(),
+  rating: zod.number(),
+  message: zod.string(),
+  createdAt: zod.string(),
+  restaurantName: zod.string().nullish(),
+  orderNumber: zod.string().nullish(),
+  customerName: zod.string().nullish(),
+});
+export const ListAdminReviewsResponse = zod.array(ListAdminReviewsResponseItem);
+
+/**
+ * @summary Delete a review (admin)
+ */
+export const DeleteAdminReviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteAdminReviewResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
  * @summary List reviews for a restaurant
  */
 export const GetRestaurantReviewsParams = zod.object({

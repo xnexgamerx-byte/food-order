@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { restaurantsTable, menuItemsTable, ordersTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { restaurantsTable, menuItemsTable, ordersTable, reviewsTable } from "@workspace/db";
+import { eq, desc, avg } from "drizzle-orm";
 import { adminAuth, generateAdminToken, checkAdminPassword } from "../middleware/adminAuth";
 
 const router = Router();
@@ -199,6 +199,60 @@ router.put("/admin/orders/:id/status", adminAuth, async (req, res) => {
       .returning();
     if (!updated) return res.status(404).json({ error: "Not found" });
     res.json(updated);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ─── Reviews ─── */
+router.get("/admin/reviews", adminAuth, async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        id: reviewsTable.id,
+        orderId: reviewsTable.orderId,
+        restaurantId: reviewsTable.restaurantId,
+        customerPhone: reviewsTable.customerPhone,
+        rating: reviewsTable.rating,
+        message: reviewsTable.message,
+        createdAt: reviewsTable.createdAt,
+        restaurantName: restaurantsTable.nameAr,
+        orderNumber: ordersTable.orderNumber,
+        customerName: ordersTable.customerName,
+      })
+      .from(reviewsTable)
+      .leftJoin(restaurantsTable, eq(reviewsTable.restaurantId, restaurantsTable.id))
+      .leftJoin(ordersTable, eq(reviewsTable.orderId, ordersTable.id))
+      .orderBy(desc(reviewsTable.createdAt));
+    res.json(rows);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/admin/reviews/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params["id"]);
+    const [removed] = await db
+      .delete(reviewsTable)
+      .where(eq(reviewsTable.id, id))
+      .returning();
+    if (!removed) return res.status(404).json({ error: "Not found" });
+
+    // Recompute restaurant rating after deletion
+    const [agg] = await db
+      .select({ avgRating: avg(reviewsTable.rating) })
+      .from(reviewsTable)
+      .where(eq(reviewsTable.restaurantId, removed.restaurantId));
+
+    await db
+      .update(restaurantsTable)
+      .set({ rating: agg?.avgRating ? Number(agg.avgRating) : 4.0 })
+      .where(eq(restaurantsTable.id, removed.restaurantId));
+
+    res.json({ success: true });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

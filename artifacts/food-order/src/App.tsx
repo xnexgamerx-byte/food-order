@@ -16,6 +16,7 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRestaurants from "@/pages/admin/AdminRestaurants";
 import AdminMenu from "@/pages/admin/AdminMenu";
 import AdminOrders from "@/pages/admin/AdminOrders";
+import AdminReviews from "@/pages/admin/AdminReviews";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,6 +65,9 @@ function Router() {
       </Route>
       <Route path="/admin/orders">
         <ProtectedRoute component={AdminOrders} />
+      </Route>
+      <Route path="/admin/reviews">
+        <ProtectedRoute component={AdminReviews} />
       </Route>
 
       <Route component={NotFound} />

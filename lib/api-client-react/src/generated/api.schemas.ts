@@ -103,6 +103,19 @@ export interface Review {
   createdAt: string;
 }
 
+export interface AdminReview {
+  id: number;
+  orderId: number;
+  restaurantId: number;
+  customerPhone: string;
+  rating: number;
+  message: string;
+  createdAt: string;
+  restaurantName?: string | null;
+  orderNumber?: string | null;
+  customerName?: string | null;
+}
+
 export interface CreateReviewBody {
   orderId: number;
   customerPhone: string;
@@ -138,4 +151,8 @@ export const ListRestaurantsSortBy = {
 
 export type GetRestaurantMenuParams = {
   category?: string;
+};
+
+export type DeleteAdminReview200 = {
+  success: boolean;
 };
