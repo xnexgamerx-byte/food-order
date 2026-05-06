@@ -329,6 +329,9 @@ components:
           type: string
         minOrder:
           type: number
+        maxOrder:
+          type: number
+          nullable: true
         imageUrl:
           type: string
         isOpen:

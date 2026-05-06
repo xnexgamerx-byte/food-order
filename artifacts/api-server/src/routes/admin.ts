@@ -48,7 +48,7 @@ router.get("/admin/restaurants", adminAuth, async (req, res) => {
 
 router.post("/admin/restaurants", adminAuth, async (req, res) => {
   try {
-    const { nameAr, categoryAr, deliveryTime, deliveryMinutes, minOrder, deliveryFee,
+    const { nameAr, categoryAr, deliveryTime, deliveryMinutes, minOrder, maxOrder, deliveryFee,
             imageUrl, whatsapp, isOpen, isFreeDelivery, discountPercent,
             pricePerKm, lat, lng } = req.body;
     const [created] = await db.insert(restaurantsTable).values({
@@ -59,8 +59,9 @@ router.post("/admin/restaurants", adminAuth, async (req, res) => {
       deliveryTime: deliveryTime || "20-35 د",
       deliveryMinutes: Number(deliveryMinutes) || 30,
       minOrder: Number(minOrder) || 5000,
+      maxOrder: maxOrder !== undefined && maxOrder !== "" && maxOrder !== null ? Number(maxOrder) : null,
       deliveryFee: deliveryFee !== undefined ? Number(deliveryFee) : 2000,
-      pricePerKm: pricePerKm !== undefined ? Number(pricePerKm) : 0,
+      pricePerKm: pricePerKm !== undefined ? Number(pricePerKm) : 500,
       lat: lat !== undefined && lat !== "" && lat !== null ? Number(lat) : null,
       lng: lng !== undefined && lng !== "" && lng !== null ? Number(lng) : null,
       imageUrl: imageUrl || "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80",
@@ -92,7 +93,7 @@ router.delete("/admin/restaurants/:id", adminAuth, async (req, res) => {
 router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { nameAr, categoryAr, rating, deliveryTime, deliveryMinutes, minOrder, deliveryFee,
+    const { nameAr, categoryAr, rating, deliveryTime, deliveryMinutes, minOrder, maxOrder, deliveryFee,
             isOpen, isFreeDelivery, discountPercent, imageUrl, whatsapp,
             pricePerKm, lat, lng } = req.body;
 
@@ -105,6 +106,7 @@ router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
         ...(deliveryTime !== undefined && { deliveryTime }),
         ...(deliveryMinutes !== undefined && { deliveryMinutes: Number(deliveryMinutes) }),
         ...(minOrder !== undefined && { minOrder: Number(minOrder) }),
+        ...(maxOrder !== undefined && { maxOrder: maxOrder === "" || maxOrder === null ? null : Number(maxOrder) }),
         ...(deliveryFee !== undefined && { deliveryFee: Number(deliveryFee) }),
         ...(pricePerKm !== undefined && { pricePerKm: Number(pricePerKm) }),
         ...(lat !== undefined && { lat: lat === "" || lat === null ? null : Number(lat) }),

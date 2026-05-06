@@ -7,7 +7,7 @@ import AdminLayout from "./AdminLayout";
 
 interface Restaurant {
   id: number; nameAr: string; categoryAr: string; rating: number;
-  deliveryTime: string; deliveryMinutes: number; minOrder: number;
+  deliveryTime: string; deliveryMinutes: number; minOrder: number; maxOrder: number | null;
   deliveryFee: number; pricePerKm: number;
   lat: number | null; lng: number | null;
   imageUrl: string; isOpen: boolean; isFreeDelivery: boolean;
@@ -18,8 +18,8 @@ type EditField = { id: number; field: string; value: string };
 
 const EMPTY_REST = {
   nameAr: "", categoryAr: "", deliveryTime: "20-35 د",
-  deliveryMinutes: "30", minOrder: "5000", deliveryFee: "2000",
-  pricePerKm: "0", lat: "", lng: "", mapsUrl: "",
+  deliveryMinutes: "30", minOrder: "5000", maxOrder: "", deliveryFee: "2000",
+  pricePerKm: "500", lat: "", lng: "", mapsUrl: "",
   imageUrl: "", whatsapp: "", discountPercent: "0",
 };
 
@@ -284,9 +284,10 @@ export default function AdminRestaurants() {
           ...newRest,
           deliveryMinutes: Number(newRest.deliveryMinutes),
           minOrder: Number(newRest.minOrder),
+          maxOrder: newRest.maxOrder ? Number(newRest.maxOrder) : null,
           deliveryFee: Number(newRest.deliveryFee),
           discountPercent: Number(newRest.discountPercent),
-          pricePerKm: Number(newRest.pricePerKm) || 0,
+          pricePerKm: Number(newRest.pricePerKm) || 500,
           lat: newRest.lat ? Number(newRest.lat) : null,
           lng: newRest.lng ? Number(newRest.lng) : null,
         }),
@@ -365,12 +366,13 @@ export default function AdminRestaurants() {
             <Field label="وقت التوصيل (مثال: 20-35 د)" value={newRest.deliveryTime} onChange={(v) => setNewRest((p) => ({ ...p, deliveryTime: v }))} />
             <div className="grid grid-cols-2 gap-3">
               <Field label="وقت التوصيل (دقيقة)" value={newRest.deliveryMinutes} onChange={(v) => setNewRest((p) => ({ ...p, deliveryMinutes: v }))} type="number" />
-              <Field label="الحد الأدنى (د.ع)" value={newRest.minOrder} onChange={(v) => setNewRest((p) => ({ ...p, minOrder: v }))} type="number" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="كلفة التوصيل (د.ع)" value={newRest.deliveryFee} onChange={(v) => setNewRest((p) => ({ ...p, deliveryFee: v }))} type="number" />
               <Field label="الخصم %" value={newRest.discountPercent} onChange={(v) => setNewRest((p) => ({ ...p, discountPercent: v }))} type="number" />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="حد أدنى للطلب (د.ع)" value={newRest.minOrder} onChange={(v) => setNewRest((p) => ({ ...p, minOrder: v }))} type="number" />
+              <Field label="حد أعلى للطلب (د.ع) — اختياري" value={newRest.maxOrder} onChange={(v) => setNewRest((p) => ({ ...p, maxOrder: v }))} type="number" placeholder="بلا حد" />
+            </div>
+            <Field label="كلفة التوصيل الحد الأدنى (د.ع)" value={newRest.deliveryFee} onChange={(v) => setNewRest((p) => ({ ...p, deliveryFee: v }))} type="number" />
             <Field
               label="سعر الكيلومتر (د.ع/كم) — 0 يعني سعر توصيل ثابت"
               value={newRest.pricePerKm}
@@ -432,7 +434,8 @@ export default function AdminRestaurants() {
                 {renderEditableCell(r, "nameAr", "اسم المطعم")}
                 {renderEditableCell(r, "categoryAr", "التصنيف")}
                 {renderEditableCell(r, "discountPercent", "الخصم %", "number")}
-                {renderEditableCell(r, "minOrder", "الحد الأدنى (د.ع)", "number")}
+                {renderEditableCell(r, "minOrder", "حد أدنى للطلب (د.ع)", "number")}
+                {renderEditableCell(r, "maxOrder", "حد أعلى للطلب (د.ع)", "number")}
                 {renderEditableCell(r, "deliveryFee", "كلفة توصيل الحد الأدنى (د.ع)", "number")}
                 {renderEditableCell(r, "pricePerKm", "سعر الكيلومتر (د.ع/كم)", "number")}
                 {renderEditableCell(r, "deliveryTime", "وقت التوصيل")}
