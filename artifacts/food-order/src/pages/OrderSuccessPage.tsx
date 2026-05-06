@@ -13,21 +13,31 @@ export default function OrderSuccessPage() {
   const restaurantName = params.get("restaurantName") || "";
   const total = params.get("total") || "0";
 
-  // Auto-open WhatsApp once after order is created so the message is sent
-  // immediately to the restaurant's WhatsApp number.
+  const isMobile =
+    typeof navigator !== "undefined" &&
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+  // Build a mobile-friendly link that opens WhatsApp app directly using the
+  // whatsapp:// scheme, which works reliably from a real user tap on iOS and
+  // Android. Falls back to wa.me on desktop.
+  const mobileWhatsAppUrl = whatsappUrl
+    ? whatsappUrl
+        .replace(/^https?:\/\/wa\.me\//, "whatsapp://send?phone=")
+        .replace("?text=", "&text=")
+    : "";
+  const finalWhatsAppUrl = isMobile ? mobileWhatsAppUrl : whatsappUrl;
+
+  // Only auto-open on desktop (popups + new tab work fine there).
+  // On mobile we rely on the prominent button (a user gesture) — auto-redirect
+  // is unreliable because browsers block app launches without a tap.
   useEffect(() => {
-    if (!whatsappUrl || openedRef.current) return;
+    if (!whatsappUrl || openedRef.current || isMobile) return;
     openedRef.current = true;
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     const t = setTimeout(() => {
-      if (isMobile) {
-        window.location.href = whatsappUrl;
-      } else {
-        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-      }
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
     }, 600);
     return () => clearTimeout(t);
-  }, [whatsappUrl]);
+  }, [whatsappUrl, isMobile]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
@@ -41,7 +51,9 @@ export default function OrderSuccessPage() {
           <div>
             <h1 className="text-xl font-black text-foreground">تم استلام طلبك</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              سيُفتح واتساب المطعم تلقائياً لإرسال الطلب
+              {isMobile
+                ? "اضغط الزر الأخضر لإرسال الطلب عبر واتساب"
+                : "سيُفتح واتساب المطعم تلقائياً لإرسال الطلب"}
             </p>
           </div>
         </div>
@@ -70,20 +82,34 @@ export default function OrderSuccessPage() {
 
         {/* WhatsApp CTA */}
         <a
-          href={whatsappUrl}
-          target="_blank"
+          href={finalWhatsAppUrl}
+          target={isMobile ? "_self" : "_blank"}
           rel="noopener noreferrer"
           data-testid="button-whatsapp"
+          className="block"
         >
-          <button className="w-full h-13 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center gap-3 text-base font-bold py-3.5 shadow-md transition-all active:scale-98">
-            <MessageCircle className="h-5 w-5" />
-            فتح واتساب يدوياً
+          <button className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center gap-3 text-lg font-black shadow-lg transition-all active:scale-95 animate-pulse">
+            <MessageCircle className="h-6 w-6" />
+            {isMobile ? "إرسال الطلب عبر واتساب" : "فتح واتساب يدوياً"}
           </button>
         </a>
 
-        <p className="text-center text-xs text-muted-foreground leading-relaxed">
-          إذا لم يفتح واتساب تلقائياً، اضغط الزر أعلاه
-        </p>
+        {isMobile && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center text-xs text-emerald-700 underline"
+          >
+            لم يفتح التطبيق؟ افتح عبر المتصفح
+          </a>
+        )}
+
+        {!isMobile && (
+          <p className="text-center text-xs text-muted-foreground leading-relaxed">
+            إذا لم يفتح واتساب تلقائياً، اضغط الزر أعلاه
+          </p>
+        )}
 
         <button
           onClick={() => setLocation("/")}
