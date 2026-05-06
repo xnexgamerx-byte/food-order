@@ -21,7 +21,7 @@ export const restaurantsTable = pgTable("restaurants", {
   rating: real("rating").notNull().default(4.0),
   deliveryTime: text("delivery_time").notNull().default("20-35 د"),
   minOrder: real("min_order").notNull().default(5000),
-  maxOrder: real("max_order"),
+  maxDeliveryFee: real("max_delivery_fee"),
   imageUrl: text("image_url").notNull(),
   isOpen: boolean("is_open").notNull().default(true),
   isFreeDelivery: boolean("is_free_delivery").notNull().default(false),

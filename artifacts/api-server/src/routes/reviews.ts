@@ -10,7 +10,7 @@ router.get("/reviews/by-order/:orderId", async (req, res) => {
   try {
     const orderId = Number(req.params["orderId"]);
     if (!Number.isFinite(orderId)) {
-      return res.status(400).json({ error: "invalid orderId" });
+      res.status(400).json({ error: "invalid orderId" }); return;
     }
     const [review] = await db
       .select()
@@ -27,7 +27,7 @@ router.get("/restaurants/:id/reviews", async (req, res) => {
   try {
     const id = Number(req.params["id"]);
     if (!Number.isFinite(id)) {
-      return res.status(400).json({ error: "invalid id" });
+      res.status(400).json({ error: "invalid id" }); return;
     }
     const rows = await db
       .select()
@@ -44,12 +44,12 @@ router.post("/reviews", async (req, res) => {
   try {
     const parsed = CreateReviewBody.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "بيانات التقييم غير صحيحة" });
+      res.status(400).json({ error: "بيانات التقييم غير صحيحة" }); return;
     }
     const { orderId, customerPhone, rating, message } = parsed.data;
 
     if (rating < 3 && (!message || message.trim().length < 3)) {
-      return res.status(400).json({ error: "يرجى كتابة سبب التقييم المنخفض" });
+      res.status(400).json({ error: "يرجى كتابة سبب التقييم المنخفض" }); return;
     }
 
     const [order] = await db
@@ -57,19 +57,19 @@ router.post("/reviews", async (req, res) => {
       .from(ordersTable)
       .where(eq(ordersTable.id, orderId));
 
-    if (!order) return res.status(404).json({ error: "الطلب غير موجود" });
+    if (!order) { res.status(404).json({ error: "الطلب غير موجود" }); return; }
     if (order.customerPhone !== customerPhone) {
-      return res.status(403).json({ error: "هذا الطلب لا يخصك" });
+      res.status(403).json({ error: "هذا الطلب لا يخصك" }); return;
     }
     if (order.status !== "delivered") {
-      return res.status(400).json({ error: "يمكن التقييم بعد توصيل الطلب فقط" });
+      res.status(400).json({ error: "يمكن التقييم بعد توصيل الطلب فقط" }); return;
     }
 
     const [existing] = await db
       .select()
       .from(reviewsTable)
       .where(eq(reviewsTable.orderId, orderId));
-    if (existing) return res.status(409).json({ error: "تم تقييم هذا الطلب مسبقاً" });
+    if (existing) { res.status(409).json({ error: "تم تقييم هذا الطلب مسبقاً" }); return; }
 
     const [created] = await db
       .insert(reviewsTable)

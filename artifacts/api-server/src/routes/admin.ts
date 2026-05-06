@@ -10,7 +10,7 @@ const router = Router();
 router.post("/admin/login", async (req, res) => {
   const { password } = req.body as { password?: string };
   if (!password || !checkAdminPassword(password)) {
-    return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
+    res.status(401).json({ error: "كلمة المرور غير صحيحة" }); return;
   }
   const token = generateAdminToken();
   res.json({ token });
@@ -48,7 +48,7 @@ router.get("/admin/restaurants", adminAuth, async (req, res) => {
 
 router.post("/admin/restaurants", adminAuth, async (req, res) => {
   try {
-    const { nameAr, categoryAr, deliveryTime, deliveryMinutes, minOrder, maxOrder, deliveryFee,
+    const { nameAr, categoryAr, deliveryTime, deliveryMinutes, minOrder, maxDeliveryFee, deliveryFee,
             imageUrl, whatsapp, isOpen, isFreeDelivery, discountPercent,
             pricePerKm, lat, lng } = req.body;
     const [created] = await db.insert(restaurantsTable).values({
@@ -59,7 +59,7 @@ router.post("/admin/restaurants", adminAuth, async (req, res) => {
       deliveryTime: deliveryTime || "20-35 د",
       deliveryMinutes: Number(deliveryMinutes) || 30,
       minOrder: Number(minOrder) || 5000,
-      maxOrder: maxOrder !== undefined && maxOrder !== "" && maxOrder !== null ? Number(maxOrder) : null,
+      maxDeliveryFee: maxDeliveryFee !== undefined && maxDeliveryFee !== "" && maxDeliveryFee !== null ? Number(maxDeliveryFee) : null,
       deliveryFee: deliveryFee !== undefined ? Number(deliveryFee) : 2000,
       pricePerKm: pricePerKm !== undefined ? Number(pricePerKm) : 500,
       lat: lat !== undefined && lat !== "" && lat !== null ? Number(lat) : null,
@@ -93,7 +93,7 @@ router.delete("/admin/restaurants/:id", adminAuth, async (req, res) => {
 router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { nameAr, categoryAr, rating, deliveryTime, deliveryMinutes, minOrder, maxOrder, deliveryFee,
+    const { nameAr, categoryAr, rating, deliveryTime, deliveryMinutes, minOrder, maxDeliveryFee, deliveryFee,
             isOpen, isFreeDelivery, discountPercent, imageUrl, whatsapp,
             pricePerKm, lat, lng } = req.body;
 
@@ -106,7 +106,7 @@ router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
         ...(deliveryTime !== undefined && { deliveryTime }),
         ...(deliveryMinutes !== undefined && { deliveryMinutes: Number(deliveryMinutes) }),
         ...(minOrder !== undefined && { minOrder: Number(minOrder) }),
-        ...(maxOrder !== undefined && { maxOrder: maxOrder === "" || maxOrder === null ? null : Number(maxOrder) }),
+        ...(maxDeliveryFee !== undefined && { maxDeliveryFee: maxDeliveryFee === "" || maxDeliveryFee === null ? null : Number(maxDeliveryFee) }),
         ...(deliveryFee !== undefined && { deliveryFee: Number(deliveryFee) }),
         ...(pricePerKm !== undefined && { pricePerKm: Number(pricePerKm) }),
         ...(lat !== undefined && { lat: lat === "" || lat === null ? null : Number(lat) }),
@@ -120,7 +120,7 @@ router.put("/admin/restaurants/:id", adminAuth, async (req, res) => {
       .where(eq(restaurantsTable.id, id))
       .returning();
 
-    if (!updated) return res.status(404).json({ error: "Not found" });
+    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
     res.json(updated);
   } catch (err) {
     req.log.error(err);
@@ -169,7 +169,7 @@ router.put("/admin/menu/:id", adminAuth, async (req, res) => {
       ...(categoryAr !== undefined && { categoryAr, category: categoryAr }),
       ...(isAvailable !== undefined && { isAvailable: Boolean(isAvailable) }),
     }).where(eq(menuItemsTable.id, id)).returning();
-    if (!updated) return res.status(404).json({ error: "Not found" });
+    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
     res.json(updated);
   } catch (err) {
     req.log.error(err);
@@ -207,7 +207,7 @@ router.put("/admin/orders/:id/status", adminAuth, async (req, res) => {
       .set({ status })
       .where(eq(ordersTable.id, id))
       .returning();
-    if (!updated) return res.status(404).json({ error: "Not found" });
+    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
     res.json(updated);
   } catch (err) {
     req.log.error(err);
@@ -249,7 +249,7 @@ router.delete("/admin/reviews/:id", adminAuth, async (req, res) => {
       .delete(reviewsTable)
       .where(eq(reviewsTable.id, id))
       .returning();
-    if (!removed) return res.status(404).json({ error: "Not found" });
+    if (!removed) { res.status(404).json({ error: "Not found" }); return; }
 
     // Recompute restaurant rating after deletion
     const [agg] = await db

@@ -63,14 +63,14 @@ router.get("/restaurants", async (req, res) => {
 router.get("/restaurants/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
     const [restaurant] = await db
       .select()
       .from(restaurantsTable)
       .where(eq(restaurantsTable.id, id));
 
-    if (!restaurant) return res.status(404).json({ error: "Not found" });
+    if (!restaurant) { res.status(404).json({ error: "Not found" }); return; }
 
     res.json(restaurant);
   } catch (err) {
@@ -82,7 +82,7 @@ router.get("/restaurants/:id", async (req, res) => {
 router.get("/restaurants/:id/menu", async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
     const { category } = req.query as { category?: string };
 

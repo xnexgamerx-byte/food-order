@@ -38,16 +38,24 @@ export function calcDeliveryFee(
   pricePerKm: number,
   baseFee: number,
   neighborhoodName: string,
+  maxDeliveryFee?: number | null,
 ): { fee: number; distanceKm: number | null } {
   if (!restaurantLat || !restaurantLng || pricePerKm <= 0) {
-    return { fee: baseFee, distanceKm: null };
+    const fee = maxDeliveryFee ? Math.min(baseFee, maxDeliveryFee) : baseFee;
+    return { fee, distanceKm: null };
   }
   const hood = NEIGHBORHOODS.find((n) => n.name === neighborhoodName);
-  if (!hood) return { fee: baseFee, distanceKm: null };
+  if (!hood) {
+    const fee = maxDeliveryFee ? Math.min(baseFee, maxDeliveryFee) : baseFee;
+    return { fee, distanceKm: null };
+  }
 
   const distanceKm = haversineKm(restaurantLat, restaurantLng, hood.lat, hood.lng);
   const rawFee = distanceKm * pricePerKm;
   // Round up to nearest 250 IQD, minimum baseFee
   const roundedFee = Math.ceil(rawFee / 250) * 250;
-  return { fee: Math.max(baseFee, roundedFee), distanceKm: Math.round(distanceKm * 10) / 10 };
+  let fee = Math.max(baseFee, roundedFee);
+  // Cap at maxDeliveryFee if set
+  if (maxDeliveryFee && maxDeliveryFee > 0) fee = Math.min(fee, maxDeliveryFee);
+  return { fee, distanceKm: Math.round(distanceKm * 10) / 10 };
 }

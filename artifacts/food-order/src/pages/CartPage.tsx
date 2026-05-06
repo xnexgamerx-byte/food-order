@@ -73,6 +73,7 @@ export default function CartPage() {
       restaurant.pricePerKm ?? 0,
       restaurant.deliveryFee ?? 2000,
       form.neighborhood,
+      restaurant.maxDeliveryFee,
     );
     updateDeliveryFee(fee);
     setDistanceInfo(distanceKm !== null ? { km: distanceKm, fee } : null);

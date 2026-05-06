@@ -28,11 +28,11 @@ export function checkAdminPassword(password: string): boolean {
 export function adminAuth(req: Request, res: Response, next: NextFunction) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "غير مصرح" });
+    res.status(401).json({ error: "غير مصرح" }); return;
   }
   const token = auth.slice(7);
   if (!verifyAdminToken(token)) {
-    return res.status(401).json({ error: "رمز غير صالح" });
+    res.status(401).json({ error: "رمز غير صالح" }); return;
   }
   next();
 }

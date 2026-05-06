@@ -7,7 +7,7 @@ import AdminLayout from "./AdminLayout";
 
 interface Restaurant {
   id: number; nameAr: string; categoryAr: string; rating: number;
-  deliveryTime: string; deliveryMinutes: number; minOrder: number; maxOrder: number | null;
+  deliveryTime: string; deliveryMinutes: number; minOrder: number; maxDeliveryFee: number | null;
   deliveryFee: number; pricePerKm: number;
   lat: number | null; lng: number | null;
   imageUrl: string; isOpen: boolean; isFreeDelivery: boolean;
@@ -18,7 +18,7 @@ type EditField = { id: number; field: string; value: string };
 
 const EMPTY_REST = {
   nameAr: "", categoryAr: "", deliveryTime: "20-35 د",
-  deliveryMinutes: "30", minOrder: "5000", maxOrder: "", deliveryFee: "2000",
+  deliveryMinutes: "30", minOrder: "5000", maxDeliveryFee: "", deliveryFee: "2000",
   pricePerKm: "500", lat: "", lng: "", mapsUrl: "",
   imageUrl: "", whatsapp: "", discountPercent: "0",
 };
@@ -334,7 +334,7 @@ export default function AdminRestaurants() {
           ...newRest,
           deliveryMinutes: Number(newRest.deliveryMinutes),
           minOrder: Number(newRest.minOrder),
-          maxOrder: newRest.maxOrder ? Number(newRest.maxOrder) : null,
+          maxDeliveryFee: newRest.maxDeliveryFee ? Number(newRest.maxDeliveryFee) : null,
           deliveryFee: Number(newRest.deliveryFee),
           discountPercent: Number(newRest.discountPercent),
           pricePerKm: Number(newRest.pricePerKm) || 500,
@@ -420,7 +420,7 @@ export default function AdminRestaurants() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="حد أدنى للطلب (د.ع)" value={newRest.minOrder} onChange={(v) => setNewRest((p) => ({ ...p, minOrder: v }))} type="number" />
-              <Field label="حد أعلى للطلب (د.ع) — اختياري" value={newRest.maxOrder} onChange={(v) => setNewRest((p) => ({ ...p, maxOrder: v }))} type="number" placeholder="بلا حد" />
+              <Field label="حد التوصيل الأقصى (د.ع) — اختياري" value={newRest.maxDeliveryFee} onChange={(v) => setNewRest((p) => ({ ...p, maxDeliveryFee: v }))} type="number" placeholder="بلا حد" />
             </div>
             <Field label="كلفة التوصيل الحد الأدنى (د.ع)" value={newRest.deliveryFee} onChange={(v) => setNewRest((p) => ({ ...p, deliveryFee: v }))} type="number" />
             <Field
@@ -485,7 +485,7 @@ export default function AdminRestaurants() {
                 {renderEditableCell(r, "categoryAr", "التصنيف")}
                 {renderEditableCell(r, "discountPercent", "الخصم %", "number")}
                 {renderEditableCell(r, "minOrder", "حد أدنى للطلب (د.ع)", "number")}
-                {renderEditableCell(r, "maxOrder", "حد أعلى للطلب (د.ع)", "number")}
+                {renderEditableCell(r, "maxDeliveryFee", "حد التوصيل الأقصى (د.ع)", "number")}
                 {renderEditableCell(r, "deliveryFee", "كلفة توصيل الحد الأدنى (د.ع)", "number")}
                 {renderEditableCell(r, "pricePerKm", "سعر الكيلومتر (د.ع/كم)", "number")}
                 {renderEditableCell(r, "deliveryTime", "وقت التوصيل")}

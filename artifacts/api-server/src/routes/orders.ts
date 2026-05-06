@@ -10,7 +10,7 @@ router.get("/orders/by-phone/:phone", async (req, res) => {
   try {
     const phone = String(req.params["phone"] || "").trim();
     if (!phone) {
-      return res.status(400).json({ error: "phone is required" });
+      res.status(400).json({ error: "phone is required" }); return;
     }
     const rows = await db
       .select()
@@ -34,7 +34,7 @@ router.post("/orders", async (req, res) => {
   try {
     const parsed = CreateOrderBody.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid request body", details: parsed.error });
+      res.status(400).json({ error: "Invalid request body", details: parsed.error }); return;
     }
 
     const body = parsed.data;
@@ -45,7 +45,7 @@ router.post("/orders", async (req, res) => {
       .where(eq(restaurantsTable.id, body.restaurantId));
 
     if (!restaurant) {
-      return res.status(404).json({ error: "Restaurant not found" });
+      res.status(404).json({ error: "Restaurant not found" }); return;
     }
 
     const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;

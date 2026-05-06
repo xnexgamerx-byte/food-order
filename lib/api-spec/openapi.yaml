@@ -329,7 +329,7 @@ components:
           type: string
         minOrder:
           type: number
-        maxOrder:
+        maxDeliveryFee:
           type: number
           nullable: true
         imageUrl:

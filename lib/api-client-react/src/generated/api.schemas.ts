@@ -23,7 +23,7 @@ export interface Restaurant {
   rating: number;
   deliveryTime: string;
   minOrder: number;
-  maxOrder?: number | null;
+  maxDeliveryFee?: number | null;
   imageUrl: string;
   isOpen: boolean;
   isFreeDelivery?: boolean;
