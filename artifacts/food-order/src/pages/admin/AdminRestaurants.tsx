@@ -25,19 +25,35 @@ const EMPTY_REST = {
 
 function parseGoogleMapsUrl(url: string): { lat: number; lng: number } | null {
   if (!url) return null;
+  let decoded = url;
+  try { decoded = decodeURIComponent(url); } catch { /* ignore */ }
+  const candidates = [url, decoded];
   const patterns = [
     /@(-?\d+\.\d+),(-?\d+\.\d+)/,
     /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
     /[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&]center=(-?\d+\.\d+),(-?\d+\.\d+)/,
     /\/place\/[^/]+\/@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
+    /destination=(-?\d+\.\d+),(-?\d+\.\d+)/,
     /maps\.google\.[^/]+\/\?.*q=(-?\d+\.\d+)%2C(-?\d+\.\d+)/,
   ];
-  for (const re of patterns) {
-    const m = url.match(re);
-    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+  for (const text of candidates) {
+    for (const re of patterns) {
+      const m = text.match(re);
+      if (m) {
+        const lat = parseFloat(m[1]);
+        const lng = parseFloat(m[2]);
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
+      }
+    }
   }
-  const coordOnly = url.trim().match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
-  if (coordOnly) return { lat: parseFloat(coordOnly[1]), lng: parseFloat(coordOnly[2]) };
+  const coordOnly = url.trim().match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
+  if (coordOnly) {
+    const lat = parseFloat(coordOnly[1]);
+    const lng = parseFloat(coordOnly[2]);
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
+  }
   return null;
 }
 
@@ -61,12 +77,24 @@ function Field({ label, value, onChange, type = "text", placeholder }: {
 async function resolveUrl(url: string): Promise<{ lat: number; lng: number } | null> {
   const direct = parseGoogleMapsUrl(url);
   if (direct) return direct;
-  try {
-    const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(url)}`);
-    if (!res.ok) return null;
-    const data = await res.json() as { lat?: number; lng?: number };
-    if (data.lat !== undefined && data.lng !== undefined) return { lat: data.lat, lng: data.lng };
-  } catch { /* ignore */ }
+  // Retry up to 3 times — Netlify serverless functions can return 502 on cold start
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json() as { lat?: number; lng?: number };
+        if (data.lat !== undefined && data.lng !== undefined) return { lat: data.lat, lng: data.lng };
+        return null;
+      }
+      if (res.status >= 500 && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+        continue;
+      }
+      return null;
+    } catch {
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
   return null;
 }
 
