@@ -58,19 +58,45 @@ function Field({ label, value, onChange, type = "text", placeholder }: {
   );
 }
 
+async function resolveUrl(url: string): Promise<{ lat: number; lng: number } | null> {
+  const direct = parseGoogleMapsUrl(url);
+  if (direct) return direct;
+  try {
+    const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(url)}`);
+    if (!res.ok) return null;
+    const data = await res.json() as { lat?: number; lng?: number };
+    if (data.lat !== undefined && data.lng !== undefined) return { lat: data.lat, lng: data.lng };
+  } catch { /* ignore */ }
+  return null;
+}
+
 function MapsUrlField({
   lat, lng, onParsed,
 }: {
   lat: string; lng: string;
   onParsed: (lat: string, lng: string) => void;
 }) {
-  const [url, setUrl] = useState("");
-  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [value, setValue] = useState("");
+  const [status, setStatus] = useState<"idle" | "ok" | "error" | "loading">("idle");
 
-  const handleChange = (v: string) => {
-    setUrl(v);
+  const handleChange = async (v: string) => {
+    setValue(v);
     if (!v) { setStatus("idle"); onParsed("", ""); return; }
-    const parsed = parseGoogleMapsUrl(v);
+
+    // Check if it's plain coordinates: "34.6057, 43.6796"
+    const coordOnly = v.trim().match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
+    if (coordOnly) {
+      const clat = parseFloat(coordOnly[1]);
+      const clng = parseFloat(coordOnly[2]);
+      if (clat >= -90 && clat <= 90 && clng >= -180 && clng <= 180) {
+        setStatus("ok");
+        onParsed(String(clat), String(clng));
+        return;
+      }
+    }
+
+    setStatus("loading");
+    const parsed = await resolveUrl(v);
     if (parsed) {
       setStatus("ok");
       onParsed(String(parsed.lat), String(parsed.lng));
@@ -82,38 +108,43 @@ function MapsUrlField({
 
   return (
     <div>
-      <label className="text-xs text-muted-foreground mb-1 block">موقع المطعم (رابط خرائط جوجل)</label>
+      <label className="text-xs text-muted-foreground mb-1 block">موقع المطعم</label>
       <div className="relative">
         <input
-          type="url"
-          value={url}
-          placeholder="الصق رابط خرائط جوجل هنا..."
+          value={value}
+          placeholder='رابط خرائط جوجل أو "34.60, 43.67"'
           onChange={(e) => handleChange(e.target.value)}
           className={`w-full h-9 pr-3 pl-8 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right transition-colors ${
             status === "ok" ? "border-emerald-400 bg-emerald-50" :
             status === "error" ? "border-red-400 bg-red-50" :
+            status === "loading" ? "border-amber-300 bg-amber-50" :
             "border-border"
           }`}
         />
         <MapPin className={`absolute left-2.5 top-2.5 h-4 w-4 ${
           status === "ok" ? "text-emerald-500" :
           status === "error" ? "text-red-400" :
+          status === "loading" ? "text-amber-500 animate-pulse" :
           "text-muted-foreground"
         }`} />
       </div>
+      {status === "loading" && <p className="text-[11px] text-amber-600 mt-1">جاري قراءة الرابط...</p>}
       {status === "ok" && lat && lng && (
         <p className="text-[11px] text-emerald-600 mt-1 font-medium">
-          ✓ تم استخراج الموقع: {parseFloat(lat).toFixed(4)}, {parseFloat(lng).toFixed(4)}
+          ✓ الموقع: {parseFloat(lat).toFixed(4)}, {parseFloat(lng).toFixed(4)}
         </p>
       )}
       {status === "error" && (
-        <p className="text-[11px] text-red-500 mt-1">
-          تعذّر قراءة الإحداثيات — تأكد أن الرابط من خرائط جوجل
+        <div className="mt-1 bg-red-50 border border-red-200 rounded-lg p-2 text-[11px] text-red-700 space-y-1">
+          <p className="font-bold">تعذّر قراءة الرابط المختصر</p>
+          <p>من الجوال: افتح خرائط جوجل ← اضغط مطوّلاً على موقع المطعم ← انسخ الأرقام من الأسفل (مثل <span dir="ltr">34.6057, 43.6796</span>) والصقها هنا مباشرة</p>
+        </div>
+      )}
+      {status === "idle" && (
+        <p className="text-[10px] text-muted-foreground mt-1">
+          الصق رابط خرائط جوجل — أو الأرقام مباشرة: <span dir="ltr">34.60, 43.67</span>
         </p>
       )}
-      <p className="text-[10px] text-muted-foreground mt-1">
-        كيف تحصل على الرابط: افتح خرائط جوجل ← ابحث عن موقع المطعم ← انسخ الرابط من شريط العنوان
-      </p>
     </div>
   );
 }
@@ -129,12 +160,26 @@ function MapsUrlEditField({
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [parsed, setParsed] = useState<{ lat: number; lng: number } | null>(null);
-  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "ok" | "error" | "loading">("idle");
 
-  const handleChange = (v: string) => {
+  const handleChange = async (v: string) => {
     setUrl(v);
     if (!v) { setStatus("idle"); setParsed(null); return; }
-    const res = parseGoogleMapsUrl(v);
+
+    // Accept plain coordinates "34.6057, 43.6796"
+    const coordOnly = v.trim().match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
+    if (coordOnly) {
+      const clat = parseFloat(coordOnly[1]);
+      const clng = parseFloat(coordOnly[2]);
+      if (clat >= -90 && clat <= 90 && clng >= -180 && clng <= 180) {
+        setStatus("ok");
+        setParsed({ lat: clat, lng: clng });
+        return;
+      }
+    }
+
+    setStatus("loading");
+    const res = await resolveUrl(v);
     if (res) { setStatus("ok"); setParsed(res); }
     else { setStatus("error"); setParsed(null); }
   };
@@ -177,30 +222,35 @@ function MapsUrlEditField({
         <div className="mt-2 space-y-2">
           <div className="relative">
             <input
-              type="url"
               value={url}
-              placeholder="الصق رابط خرائط جوجل..."
+              placeholder='رابط جوجل أو "34.60, 43.67"'
               autoFocus
               onChange={(e) => handleChange(e.target.value)}
               className={`w-full h-9 pr-3 pl-8 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 text-right transition-colors ${
                 status === "ok" ? "border-emerald-400 bg-emerald-50" :
                 status === "error" ? "border-red-400 bg-red-50" :
+                status === "loading" ? "border-amber-300 bg-amber-50" :
                 "border-border"
               }`}
             />
             <MapPin className={`absolute left-2.5 top-2.5 h-4 w-4 ${
               status === "ok" ? "text-emerald-500" :
               status === "error" ? "text-red-400" :
+              status === "loading" ? "text-amber-500 animate-pulse" :
               "text-muted-foreground"
             }`} />
           </div>
+          {status === "loading" && <p className="text-[11px] text-amber-600">جاري قراءة الرابط...</p>}
           {status === "ok" && parsed && (
             <p className="text-[11px] text-emerald-600 font-medium">
               ✓ {parsed.lat.toFixed(4)}, {parsed.lng.toFixed(4)}
             </p>
           )}
           {status === "error" && (
-            <p className="text-[11px] text-red-500">تعذّر قراءة الرابط</p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-[11px] text-red-700 space-y-0.5">
+              <p className="font-bold">تعذّر قراءة الرابط المختصر</p>
+              <p>من الجوال: اضغط مطوّلاً على الموقع في خرائط جوجل ← انسخ الأرقام من الأسفل ← الصقها هنا مباشرة (مثل <span dir="ltr">34.60, 43.67</span>)</p>
+            </div>
           )}
           <div className="flex gap-2">
             <button
