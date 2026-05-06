@@ -1,6 +1,20 @@
 import { Router } from "express";
+import OLCModule from "open-location-code-typescript";
+
+// The package's default export is `{ CodeArea, default: OpenLocationCodeClass }`,
+// so unwrap one more level to get the class with static methods.
+const OpenLocationCode: {
+  isShort(code: string): boolean;
+  isFull(code: string): boolean;
+  recoverNearest(short: string, lat: number, lng: number): string;
+  decode(code: string): { latitudeCenter: number; longitudeCenter: number };
+} = (OLCModule as unknown as { default: typeof OpenLocationCode }).default ?? (OLCModule as never);
 
 const router = Router();
+
+// Reference point for short Plus Code recovery (Salah al-Din / Tikrit center)
+const REFERENCE_LAT = 34.5959;
+const REFERENCE_LNG = 43.6788;
 
 function extractCoordsFromText(text: string): { lat: number; lng: number } | null {
   const patterns = [
@@ -27,12 +41,41 @@ function extractCoordsFromText(text: string): { lat: number; lng: number } | nul
   return null;
 }
 
+// Try to extract a Plus Code (Open Location Code) from the text and decode
+// it to lat/lng. Short codes are recovered relative to the Salah al-Din region.
+function extractCoordsFromPlusCode(text: string): { lat: number; lng: number } | null {
+  // Plus Code format: [4 or 8 chars]+[2 or 3 chars] using base20 alphabet
+  const re = /([23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3})/gi;
+  const matches = text.match(re);
+  if (!matches) return null;
+  for (const raw of matches) {
+    const code = raw.toUpperCase();
+    try {
+      let fullCode = code;
+      if (OpenLocationCode.isShort(code)) {
+        fullCode = OpenLocationCode.recoverNearest(code, REFERENCE_LAT, REFERENCE_LNG);
+      }
+      if (!OpenLocationCode.isFull(fullCode)) continue;
+      const area = OpenLocationCode.decode(fullCode);
+      const lat = area.latitudeCenter;
+      const lng = area.longitudeCenter;
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return { lat, lng };
+      }
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
 router.get("/resolve-maps-url", async (req, res) => {
   const { url } = req.query as { url?: string };
   if (!url) return res.status(400).json({ error: "url is required" });
 
   const direct = extractCoordsFromText(url);
   if (direct) return res.json({ lat: direct.lat, lng: direct.lng });
+
+  const directPlus = extractCoordsFromPlusCode(url);
+  if (directPlus) return res.json({ lat: directPlus.lat, lng: directPlus.lng });
 
   try {
     const controller = new AbortController();
@@ -55,10 +98,16 @@ router.get("/resolve-maps-url", async (req, res) => {
     const fromUrl = extractCoordsFromText(finalUrl);
     if (fromUrl) return res.json({ lat: fromUrl.lat, lng: fromUrl.lng });
 
+    const plusFromUrl = extractCoordsFromPlusCode(decodeURIComponent(finalUrl));
+    if (plusFromUrl) return res.json({ lat: plusFromUrl.lat, lng: plusFromUrl.lng });
+
     const html = await response.text();
 
     const fromHtml = extractCoordsFromText(html);
     if (fromHtml) return res.json({ lat: fromHtml.lat, lng: fromHtml.lng });
+
+    const plusFromHtml = extractCoordsFromPlusCode(html);
+    if (plusFromHtml) return res.json({ lat: plusFromHtml.lat, lng: plusFromHtml.lng });
 
     // Try to find coordinates in the canonical URL inside the HTML
     const canonicalMatch = html.match(/rel="canonical"\s+href="([^"]+)"/);
