@@ -37,11 +37,16 @@ export default function RestaurantPage() {
   const getQty = (menuItemId: number) =>
     restaurantId !== id ? 0 : (items.find((i) => i.menuItemId === menuItemId)?.quantity || 0);
 
+  const discount = restaurant?.discountPercent ?? 0;
+
+  const discountedPrice = (price: number) =>
+    discount > 0 ? Math.round(price * (1 - discount / 100)) : price;
+
   const handleAdd = (item: NonNullable<typeof menuItems>[number]) => {
     const cartItem: CartItem = {
       menuItemId: item.id,
       quantity: 1,
-      price: item.price,
+      price: discountedPrice(item.price),
       name: item.name,
       nameAr: item.nameAr,
       imageUrl: item.imageUrl,
@@ -74,7 +79,14 @@ export default function RestaurantPage() {
 
         {restaurant && (
           <div className="absolute bottom-4 right-4 left-4 text-white">
-            <h1 className="text-xl font-black">{restaurant.nameAr}</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-xl font-black">{restaurant.nameAr}</h1>
+              {(restaurant.discountPercent ?? 0) > 0 && (
+                <span className="bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full">
+                  -{restaurant.discountPercent}%
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-4 mt-1.5">
               <div className="flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
@@ -149,9 +161,16 @@ export default function RestaurantPage() {
                       </p>
                     )}
                     <div className="flex items-center justify-between mt-2.5">
-                      <span className="text-primary font-black text-sm">
-                        {item.price.toLocaleString()} د.ع
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-primary font-black text-sm">
+                          {discountedPrice(item.price).toLocaleString()} د.ع
+                        </span>
+                        {discount > 0 && (
+                          <span className="text-muted-foreground text-xs line-through">
+                            {item.price.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
                       {qty === 0 ? (
                         <button
                           onClick={() => handleAdd(item)}
