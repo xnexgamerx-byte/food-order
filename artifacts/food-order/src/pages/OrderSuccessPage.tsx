@@ -18,9 +18,14 @@ export default function OrderSuccessPage() {
   useEffect(() => {
     if (!whatsappUrl || openedRef.current) return;
     openedRef.current = true;
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     const t = setTimeout(() => {
-      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    }, 800);
+      if (isMobile) {
+        window.location.href = whatsappUrl;
+      } else {
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      }
+    }, 600);
     return () => clearTimeout(t);
   }, [whatsappUrl]);
 

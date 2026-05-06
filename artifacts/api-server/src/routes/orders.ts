@@ -67,8 +67,12 @@ router.post("/orders", async (req, res) => {
       `\n⏰ الوقت: ${new Date().toLocaleString("ar-IQ", { timeZone: "Asia/Baghdad" })}`
     );
 
-    const whatsappNumber = restaurant.whatsapp || restaurant.phone;
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+    const rawNumber = restaurant.whatsapp || restaurant.phone || "";
+    let digits = rawNumber.replace(/\D/g, "");
+    if (digits.startsWith("00")) digits = digits.slice(2);
+    if (digits.startsWith("0")) digits = "964" + digits.slice(1);
+    else if (!digits.startsWith("964") && digits.length <= 10) digits = "964" + digits;
+    const whatsappUrl = `https://wa.me/${digits}?text=${whatsappMessage}`;
 
     const [order] = await db
       .insert(ordersTable)
