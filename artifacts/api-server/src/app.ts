@@ -38,7 +38,7 @@ if (isProduction && !isNetlify) {
   app.use(express.static(staticDir));
 
   // SPA fallback — all non-API routes return index.html
-  app.get("*", (_req, res) => {
+  app.get("/*path", (_req, res) => {
     res.sendFile(path.join(staticDir, "index.html"));
   });
 }
