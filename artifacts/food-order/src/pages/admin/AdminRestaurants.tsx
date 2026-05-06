@@ -328,7 +328,7 @@ export default function AdminRestaurants() {
     setSaving(true);
     setAddError(null);
     try {
-      const created = await adminFetch(token, "/api/admin/restaurants", {
+      await adminFetch(token, "/api/admin/restaurants", {
         method: "POST",
         body: JSON.stringify({
           ...newRest,
@@ -342,7 +342,8 @@ export default function AdminRestaurants() {
           lng: newRest.lng ? Number(newRest.lng) : null,
         }),
       });
-      setRestaurants((prev) => [...prev, created]);
+      const fresh = await adminFetch(token, "/api/admin/restaurants");
+      setRestaurants(fresh);
       setNewRest(EMPTY_REST);
       setShowAdd(false);
     } catch (err) {
@@ -443,11 +444,11 @@ export default function AdminRestaurants() {
               </div>
             )}
             <div className="flex gap-2 pt-1">
-              <button onClick={addRestaurant} disabled={saving || !newRest.nameAr}
+              <button type="button" onClick={addRestaurant} disabled={saving || !newRest.nameAr}
                 className="flex-1 h-10 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-60">
                 {saving ? "جاري الحفظ..." : "إضافة المطعم"}
               </button>
-              <button onClick={() => { setShowAdd(false); setNewRest(EMPTY_REST); }}
+              <button type="button" onClick={() => { setShowAdd(false); setNewRest(EMPTY_REST); }}
                 className="flex-1 h-10 bg-muted rounded-xl text-sm font-semibold">إلغاء</button>
             </div>
           </div>
