@@ -42,8 +42,15 @@ A professional Arabic food ordering platform for Salah al-Din, Iraq — modeled 
 
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
+- `pnpm run render:build` — build for Render deployment (frontend + api-server)
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+
+## Deployment
+
+Production hosted on **Render.com** (free plan). Configured via `render.yaml` blueprint.
+Express server serves the built React frontend as static files in production (see `app.ts`).
+Required env vars on Render: `DATABASE_URL`, `SESSION_SECRET`.
 
 ## Database Schema
 

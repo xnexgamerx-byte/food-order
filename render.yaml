@@ -1,24 +1,18 @@
-databases:
-  - name: food-order-db
-    databaseName: food_order
-    user: food_order_user
-    plan: free
-
 services:
   - type: web
-    name: food-order-app
+    name: talabat-overlek
     runtime: node
     plan: free
-    buildCommand: pnpm install --frozen-lockfile && pnpm run render:build
-    startCommand: node artifacts/api-server/dist/index.mjs
+    region: frankfurt
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm run render:build
+    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    healthCheckPath: /api/healthz
     envVars:
       - key: NODE_ENV
         value: production
+      - key: BASE_PATH
+        value: /
       - key: DATABASE_URL
-        fromDatabase:
-          name: food-order-db
-          property: connectionString
+        sync: false
       - key: SESSION_SECRET
-        generateValue: true
-      - key: PORT
-        value: 10000
+        sync: false
